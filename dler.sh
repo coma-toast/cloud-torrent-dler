@@ -8,6 +8,8 @@ expect "password:"
 send $PASSWORD
 # spawn bash -c 
 expect "sftp>"
+send "get -r TV\\ Shows /media/jason/3C72B82272B7DF38/Shows/\n"
+expect "sftp>"
 send "get -r Movies /media/jason/3C72B82272B7DF38/Movies/\n"
 expect "sftp>"
 send "exit\n"
