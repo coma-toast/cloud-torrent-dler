@@ -1,4 +1,5 @@
 #!/usr/bin/expect
+# Bash ftp download. This is silly. Just use python. 
 set HOST "sftp.bitport.io"
 set USER "jdale215@gmail.com"
 set PASSWORD ">hh]dR4KK2%:+?n^~u%J\n"
