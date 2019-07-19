@@ -11,7 +11,7 @@ import (
 )
 
 type RootFolder struct {
-	space_max  int
+	space_max  string `json:"space_max"`
 	space_used int
 	code       int
 	timestamp  string
@@ -25,7 +25,7 @@ type RootFolder struct {
 }
 
 type Folder struct {
-	"space max"       int
+	space_max       int
 	space_used      int
 	code            int
 	timestamp       string
@@ -64,14 +64,14 @@ type Service interface {
 
 func main() {
 	// response := callAndUnmarshal("GET", "folder", response)
-	root := getRootFolder()
-	spew.Dump(root)
+	// root := getRootFolder()
+	// spew.Dump(root)
+	getRootFolder()
 }
 
-func getRootFolder() RootFolder {
+func getRootFolder() {
 	var username string = "jdale215@gmail.com"
 	var passwd string = "Lmo2~C}8fDJ%yj,CpfUv"
-	jsonData := RootFolder{}
 	client := &http.Client{}
 	request, err := http.NewRequest("GET", "https://www.seedr.cc/rest/folder/", nil)
 	if err != nil {
@@ -79,7 +79,17 @@ func getRootFolder() RootFolder {
 	}
 	request.SetBasicAuth(username, passwd)
 	response, err := client.Do(request)
+	if err != nil {
+		spew.Dump(err)
+	}
+	defer response.Body.Close()
 	data, _ := ioutil.ReadAll(response.Body)
-	json.Unmarshal(data, &jsonData)
-	return jsonData
+	var rootData RootFolder
+	var test interface{}
+	// var json string
+	json.Unmarshal(data, &rootData)
+	json.Unmarshal(data, &test)
+	spew.Dump(rootData)
+	spew.Dump(test)
+	// return jsonData
 }
