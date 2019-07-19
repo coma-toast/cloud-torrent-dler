@@ -4,44 +4,33 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/davecgh/go-spew/spew"
 )
 
-type RootFolder struct {
-	SpaceMax  int64         `json:"space_max"`
-	SpaceUsed int64         `json:"space_used"`
-	Code      int           `json:"code"`
-	Timestamp string        `json:"timestamp"`
-	ID        int           `json:"id"`
-	Name      string        `json:"name"`
-	ParentID  int           `json:"parent_id"`
-	Torrents  []interface{} `json:"torrents"`
-	Folders   []struct {
-		ID         int    `json:"id"`
-		Name       string `json:"name"`
-		Size       int64  `json:"size"`
-		LastUpdate string `json:"last_update"`
-	} `json:"folders"`
-	Files  []interface{} `json:"files"`
-	Result bool          `json:"result"`
+type Folder struct {
+	SpaceMax  int64 `json:"space_max"`
+	SpaceUsed int64 `json:"space_used"`
+	// Code      int   `json:"code"`
+	// Timestamp string        `json:"timestamp"`
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	ParentID int    `json:"parent_id"`
+	// Torrents  [] `json:"torrents"`
+	Folders []Folder `json:"folders"`
+	Files   []File   `json:"files"`
+	Result  bool     `json:"result"`
 }
 
-type Folder struct {
-	Space_max       int
-	space_used      int
-	code            int
-	timestamp       string
-	id              int
-	name            string
-	parent_id       int
-	torrents        []string
-	folders         []Folder
-	files           []File
-	video_converted string
-	result          bool
+type SubFolder struct {
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	Size       int64  `json:"size"`
+	LastUpdate string `json:"last_update"`
 }
 
 type File struct {
@@ -69,37 +58,61 @@ type Service interface {
 }
 
 func main() {
-	// response := callAndUnmarshal("GET", "folder", response)
-	// root := getRootFolder()
-	// spew.Dump(root)
-	getRootFolder()
+	files := getFilesFromFolder(0)
+	// spew.Dump(files)
+	downloadFiles(files)
 }
 
-func getRootFolder() {
-	var username string = "jdale215@gmail.com"
-	var passwd string = "Lmo2~C}8fDJ%yj,CpfUv"
-	client := &http.Client{}
-	request, err := http.NewRequest("GET", "https://www.seedr.cc/rest/folder/", nil)
-	if err != nil {
-		spew.Dump(err)
+func apiCall(method string, id int, url string, isFolder bool) []byte {
+	var baseUrl = "https://www.seedr.cc/rest/"
+	if isFolder {
+		url = fmt.Sprintf("%s/%s/%d", url, "folder", id)
+	} else {
+		url = fmt.Sprintf("%s/%d", url, id)
 	}
+	var username = "jdale215@gmail.com"
+	var passwd = "Lmo2~C}8fDJ%yj,CpfUv"
+	client := &http.Client{}
+	request, err := http.NewRequest(method, url, nil)
+	// TODO: pick up from here, making api call a function
+	handleError(err)
 	request.SetBasicAuth(username, passwd)
 	response, err := client.Do(request)
-	if err != nil {
-		spew.Dump(err)
-	}
+	handleError(err)
 	defer response.Body.Close()
 	data, _ := ioutil.ReadAll(response.Body)
-	spew.Dump(data)
-	var rootData RootFolder
-	var test interface{}
-	// var json string
+	return data
+}
+
+func getFolder(id int) Folder {
+	var rootData Folder
+	if id != 0 {
+		// url := fmt.Sprintf("%s%d", url, id)
+	}
+
 	err = json.Unmarshal(data, &rootData)
 	handleError(err)
-	json.Unmarshal(data, &test)
-	spew.Dump(rootData)
-	spew.Dump(test)
-	// return jsonData
+	return rootData
+}
+
+func getFilesFromFolder(folderId int) []File {
+	folder := getFolder(folderId)
+	files := folder.Files
+	for _, folder := range folder.Folders {
+		subfiles := getFilesFromFolder(folder.ID)
+		files = append(files, subfiles...)
+	}
+	return files
+}
+
+func downloadFiles(files []File) {
+	for _, file := range files {
+		out, err := os.Create(file.Name)
+		handleError(err)
+		defer out.Close()
+
+		spew.Dump(file)
+	}
 }
 
 func handleError(err error) {
