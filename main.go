@@ -11,21 +11,26 @@ import (
 )
 
 type RootFolder struct {
-	space_max  string `json:"space_max"`
-	space_used int
-	code       int
-	timestamp  string
-	id         int
-	name       string
-	parent_id  int
-	torrents   []string
-	folders    []Folder
-	files      []File
-	result     bool
+	SpaceMax  int64         `json:"space_max"`
+	SpaceUsed int64         `json:"space_used"`
+	Code      int           `json:"code"`
+	Timestamp string        `json:"timestamp"`
+	ID        int           `json:"id"`
+	Name      string        `json:"name"`
+	ParentID  int           `json:"parent_id"`
+	Torrents  []interface{} `json:"torrents"`
+	Folders   []struct {
+		ID         int    `json:"id"`
+		Name       string `json:"name"`
+		Size       int64  `json:"size"`
+		LastUpdate string `json:"last_update"`
+	} `json:"folders"`
+	Files  []interface{} `json:"files"`
+	Result bool          `json:"result"`
 }
 
 type Folder struct {
-	space_max       int
+	Space_max       int
 	space_used      int
 	code            int
 	timestamp       string
@@ -40,13 +45,14 @@ type Folder struct {
 }
 
 type File struct {
-	id           int
-	name         string
-	size         int
-	hash         string
-	last_update  string
-	stream_audio bool
-	stream_video bool
+	ID             int    `json:"id"`
+	Name           string `json:"name"`
+	Size           int64  `json:"size"`
+	Hash           string `json:"hash"`
+	LastUpdate     string `json:"last_update"`
+	StreamAudio    bool   `json:"stream_audio"`
+	StreamVideo    bool   `json:"stream_video"`
+	VideoConverted string `json:"video_converted,omitempty"`
 }
 
 // Client struct is the http Client struct
@@ -84,12 +90,20 @@ func getRootFolder() {
 	}
 	defer response.Body.Close()
 	data, _ := ioutil.ReadAll(response.Body)
+	spew.Dump(data)
 	var rootData RootFolder
 	var test interface{}
 	// var json string
-	json.Unmarshal(data, &rootData)
+	err = json.Unmarshal(data, &rootData)
+	handleError(err)
 	json.Unmarshal(data, &test)
 	spew.Dump(rootData)
 	spew.Dump(test)
 	// return jsonData
+}
+
+func handleError(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
