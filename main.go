@@ -59,44 +59,40 @@ type Service interface {
 
 func main() {
 	files := getFilesFromFolder(0)
-	// spew.Dump(files)
-	downloadFiles(files)
+	spew.Dump("files", files)
+	// downloadFiles(files)
 }
 
-func apiCall(method string, id int, url string, isFolder bool) []byte {
-	var baseUrl = "https://www.seedr.cc/rest/"
-	if isFolder {
-		url = fmt.Sprintf("%s/%s/%d", url, "folder", id)
-	} else {
-		url = fmt.Sprintf("%s/%d", url, id)
-	}
+func apiCall(method string, id int, callType string) []byte {
 	var username = "jdale215@gmail.com"
 	var passwd = "Lmo2~C}8fDJ%yj,CpfUv"
+	var baseURL = "https://www.seedr.cc/rest/"
+	url := fmt.Sprintf("%s/%s", baseURL, callType)
+	if id != 0 {
+		url = fmt.Sprintf("%s/%d", url, id)
+	}
 	client := &http.Client{}
 	request, err := http.NewRequest(method, url, nil)
-	// TODO: pick up from here, making api call a function
 	handleError(err)
 	request.SetBasicAuth(username, passwd)
 	response, err := client.Do(request)
 	handleError(err)
-	defer response.Body.Close()
 	data, _ := ioutil.ReadAll(response.Body)
+	spew.Dump(data)
+	defer response.Body.Close()
 	return data
 }
 
 func getFolder(id int) Folder {
 	var rootData Folder
-	if id != 0 {
-		// url := fmt.Sprintf("%s%d", url, id)
-	}
-
-	err = json.Unmarshal(data, &rootData)
+	data := apiCall("GET", id, "folder")
+	err := json.Unmarshal(data, &rootData)
 	handleError(err)
 	return rootData
 }
 
-func getFilesFromFolder(folderId int) []File {
-	folder := getFolder(folderId)
+func getFilesFromFolder(folderID int) []File {
+	folder := getFolder(folderID)
 	files := folder.Files
 	for _, folder := range folder.Folders {
 		subfiles := getFilesFromFolder(folder.ID)
