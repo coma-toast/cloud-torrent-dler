@@ -59,14 +59,13 @@ type Service interface {
 
 func main() {
 	files := getFilesFromFolder(0)
-	spew.Dump("files", files)
-	// downloadFiles(files)
+	downloadFiles(files)
 }
 
 func apiCall(method string, id int, callType string) []byte {
 	var username = "jdale215@gmail.com"
 	var passwd = "Lmo2~C}8fDJ%yj,CpfUv"
-	var baseURL = "https://www.seedr.cc/rest/"
+	var baseURL = "https://www.seedr.cc/rest"
 	url := fmt.Sprintf("%s/%s", baseURL, callType)
 	if id != 0 {
 		url = fmt.Sprintf("%s/%d", url, id)
@@ -78,7 +77,6 @@ func apiCall(method string, id int, callType string) []byte {
 	response, err := client.Do(request)
 	handleError(err)
 	data, _ := ioutil.ReadAll(response.Body)
-	spew.Dump(data)
 	defer response.Body.Close()
 	return data
 }
@@ -86,6 +84,7 @@ func apiCall(method string, id int, callType string) []byte {
 func getFolder(id int) Folder {
 	var rootData Folder
 	data := apiCall("GET", id, "folder")
+
 	err := json.Unmarshal(data, &rootData)
 	handleError(err)
 	return rootData
@@ -102,12 +101,18 @@ func getFilesFromFolder(folderID int) []File {
 }
 
 func downloadFiles(files []File) {
+	dlPath := "./tmp"
 	for _, file := range files {
-		out, err := os.Create(file.Name)
+		path := fmt.Sprintf("%s/%s", dlPath, file.Name)
+		out, err := os.Create(path)
 		handleError(err)
+
 		defer out.Close()
 
 		spew.Dump(file)
+		// _, err = io.Copy(out, resp.Body)
+		// return err
+
 	}
 }
 
