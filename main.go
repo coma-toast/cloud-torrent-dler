@@ -3,15 +3,20 @@ package main
 // Lmo2~C}8fDJ%yj,CpfUv
 
 import (
+	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"regexp"
+	"time"
 
+	"github.com/cavaliercoder/grab"
 	"github.com/davecgh/go-spew/spew"
 )
 
+// Folder is a folder that contains subfolders or files, or both
 type Folder struct {
 	SpaceMax  int64 `json:"space_max"`
 	SpaceUsed int64 `json:"space_used"`
@@ -57,23 +62,26 @@ type Service interface {
 	// GetCustomer(id int) (Customer, error)
 }
 
+var BaseURL = "https://www.seedr.cc/rest"
+var DlRoot = "./tmp"
+var Username = "jdale215@gmail.com"
+var Passwd = "Lmo2~C}8fDJ%yj,CpfUv"
+var Credentials = b64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", Username, Passwd)))
+
 func main() {
 	files := getFilesFromFolder(0)
 	downloadFiles(files)
 }
 
 func apiCall(method string, id int, callType string) []byte {
-	var username = "jdale215@gmail.com"
-	var passwd = "Lmo2~C}8fDJ%yj,CpfUv"
-	var baseURL = "https://www.seedr.cc/rest"
-	url := fmt.Sprintf("%s/%s", baseURL, callType)
+	url := fmt.Sprintf("%s/%s", BaseURL, callType)
 	if id != 0 {
 		url = fmt.Sprintf("%s/%d", url, id)
 	}
 	client := &http.Client{}
 	request, err := http.NewRequest(method, url, nil)
 	handleError(err)
-	request.SetBasicAuth(username, passwd)
+	request.SetBasicAuth(Username, Passwd)
 	response, err := client.Do(request)
 	handleError(err)
 	data, _ := ioutil.ReadAll(response.Body)
@@ -101,15 +109,48 @@ func getFilesFromFolder(folderID int) []File {
 }
 
 func downloadFiles(files []File) {
-	dlPath := "./tmp"
 	for _, file := range files {
-		path := fmt.Sprintf("%s/%s", dlPath, file.Name)
-		out, err := os.Create(path)
-		handleError(err)
-
-		defer out.Close()
-
 		spew.Dump(file)
+		isAVideo, _ := regexp.MatchString("(.*?).(mp4|mkv)$", file.Name)
+		if isAVideo {
+			path := fmt.Sprintf("%s/%s", DlRoot, file.Name)
+			fileURL := fmt.Sprintf("%s/file/%d", BaseURL, file.ID)
+			fmt.Println(fileURL)
+			out, err := os.Create(path)
+			handleError(err)
+			defer out.Close()
+
+			client := grab.NewClient()
+			// client.HTTPClient.Transport.DisableCompression = true
+
+			req, err := grab.NewRequest(path, fileURL)
+			// ...
+			req.NoResume = true
+			req.HTTPRequest.Header.Set("Authorization", "Basic "+Credentials)
+			resp := client.Do(req)
+			// spew.Dump(resp)
+
+			// progress bar
+			t := time.NewTicker(time.Second)
+			defer t.Stop()
+
+			for {
+				select {
+				case <-t.C:
+					fmt.Printf("%.02f%% complete\n", resp.Progress())
+
+				case <-resp.Done:
+					if err := resp.Err(); err != nil {
+						// ...
+					}
+
+					// ...
+					return
+				}
+			}
+
+		}
+
 		// _, err = io.Copy(out, resp.Body)
 		// return err
 
