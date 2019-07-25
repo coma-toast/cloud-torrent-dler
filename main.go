@@ -70,6 +70,7 @@ var Credentials = b64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", Use
 
 func main() {
 	files := getFilesFromFolder(0)
+	// spew.Dump(files)
 	downloadFiles(files)
 }
 
@@ -84,7 +85,8 @@ func apiCall(method string, id int, callType string) []byte {
 	request.SetBasicAuth(Username, Passwd)
 	response, err := client.Do(request)
 	handleError(err)
-	data, _ := ioutil.ReadAll(response.Body)
+	data, err := ioutil.ReadAll(response.Body)
+	handleError(err)
 	defer response.Body.Close()
 	return data
 }
@@ -110,12 +112,11 @@ func getFilesFromFolder(folderID int) []File {
 
 func downloadFiles(files []File) {
 	for _, file := range files {
-		spew.Dump(file)
-		isAVideo, _ := regexp.MatchString("(.*?).(mp4|mkv)$", file.Name)
+		isAVideo, _ := regexp.MatchString("(.*?).(jpg|txt)$", file.Name)
 		if isAVideo {
+			fmt.Println("Downloading file: " + file.Name)
 			path := fmt.Sprintf("%s/%s", DlRoot, file.Name)
 			fileURL := fmt.Sprintf("%s/file/%d", BaseURL, file.ID)
-			fmt.Println(fileURL)
 			out, err := os.Create(path)
 			handleError(err)
 			defer out.Close()
@@ -124,11 +125,12 @@ func downloadFiles(files []File) {
 			// client.HTTPClient.Transport.DisableCompression = true
 
 			req, err := grab.NewRequest(path, fileURL)
+			handleError(err)
 			// ...
 			req.NoResume = true
 			req.HTTPRequest.Header.Set("Authorization", "Basic "+Credentials)
 			resp := client.Do(req)
-			// spew.Dump(resp)
+			spew.Dump(resp)
 
 			// progress bar
 			t := time.NewTicker(time.Second)
@@ -141,20 +143,16 @@ func downloadFiles(files []File) {
 
 				case <-resp.Done:
 					if err := resp.Err(); err != nil {
-						// ...
+						handleError(err)
 					}
 
-					// ...
-					return
 				}
 			}
-
+			fmt.Println("Download complete.")
+		} else {
 		}
-
-		// _, err = io.Copy(out, resp.Body)
-		// return err
-
 	}
+	return
 }
 
 func handleError(err error) {
