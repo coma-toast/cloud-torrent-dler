@@ -130,26 +130,36 @@ func downloadFiles(files []File) {
 			req.NoResume = true
 			req.HTTPRequest.Header.Set("Authorization", "Basic "+Credentials)
 			resp := client.Do(req)
-			spew.Dump(resp)
+			spew.Dump(resp.HTTPResponse.Status)
 
 			// progress bar
 			t := time.NewTicker(time.Second)
 			defer t.Stop()
 
+		Loop:
 			for {
 				select {
 				case <-t.C:
-					fmt.Printf("%.02f%% complete\n", resp.Progress())
+					fmt.Printf("  transferred %v / %v bytes (%.2f%%)\n",
+						resp.BytesComplete(),
+						resp.Size,
+						100*resp.Progress())
 
 				case <-resp.Done:
-					if err := resp.Err(); err != nil {
-						handleError(err)
-					}
-
+					// download is complete
+					break Loop
 				}
 			}
+
+			// check for errors
+			if err := resp.Err(); err != nil {
+				fmt.Fprintf(os.Stderr, "Download failed: %v\n", err)
+				os.Exit(1)
+			}
+
+			fmt.Printf("Download saved to ./%v \n", resp.Filename)
+
 			fmt.Println("Download complete.")
-		} else {
 		}
 	}
 	return
