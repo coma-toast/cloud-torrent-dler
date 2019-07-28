@@ -186,7 +186,7 @@ func getFilesFromFolder(folderID int) []File {
 // Do the actual download of the files
 func downloadFiles(files []File) {
 	for _, file := range files {
-		isAVideo, _ := regexp.MatchString("(.*?).(jpg|txt)$", file.Name)
+		isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi)$", file.Name)
 		if isAVideo {
 			fmt.Println("Downloading file: " + file.Name)
 			path := fmt.Sprintf("%s/%s", DlRoot, file.Name)
