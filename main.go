@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/cavaliercoder/grab"
@@ -69,7 +71,9 @@ type Service interface {
 var BaseURL = "https://www.seedr.cc/rest"
 
 // DlRoot is the download directory
-var DlRoot = "./tmp"
+// dev code
+// var DlRoot = "./tmp"
+var DlRoot = "/media/jason/3C72B82272B7DF38/Movies/NotKids"
 
 //Username is username
 var Username = "jdale215@gmail.com"
@@ -80,11 +84,50 @@ var Passwd = "Lmo2~C}8fDJ%yj,CpfUv"
 // Credentials is the base64 encoded username:password
 var Credentials = b64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", Username, Passwd)))
 
+// Write a pid file, but first make sure it doesn't exist with a running pid.
+func alreadyRunning(pidFile string) bool {
+	// Read in the pid file as a slice of bytes.
+	if piddata, err := ioutil.ReadFile(pidFile); err == nil {
+		// Convert the file contents to an integer.
+		if pid, err := strconv.Atoi(string(piddata)); err == nil {
+			// Look for the pid in the process list.
+			if process, err := os.FindProcess(pid); err == nil {
+				// Send the process a signal zero kill.
+				if err := process.Signal(syscall.Signal(0)); err == nil {
+					fmt.Println("PID already running!")
+					// We only get an error if the pid isn't running, or it's not ours.
+					fmt.Errorf("pid already running: %d", pid)
+					return true
+				} else {
+					fmt.Println(err)
+				}
+			} else {
+				fmt.Println(err)
+			}
+		} else {
+			fmt.Println(err)
+		}
+	} else {
+		fmt.Println(err)
+	}
+	// If we get here, then the pidfile didn't exist,
+	// or the pid in it doesn't belong to the user running this app.
+	ioutil.WriteFile(pidFile, []byte(fmt.Sprintf("%d", os.Getpid())), 0664)
+	// TODO: dev code
+	// ioutil.WriteFile(pidFile, []byte(fmt.Sprintf("%d", 29355)), 0664)
+	return false
+}
+
 func main() {
-	// Start at the root folder, recursively searching down, populating the files list
-	files := getFilesFromFolder(96452508)
-	doNothing(files)
-	// downloadFiles(files)
+	pid := alreadyRunning("cloud-torrent-downloader")
+	fmt.Println(pid)
+	if !pid {
+		// Start at the root folder of your choosing (Completed),
+		// recursively searching down, populating the files list
+		files := getFilesFromFolder(96452508)
+		// doNothing(files)
+		downloadFiles(files)
+	}
 }
 
 func doNothing(nothing interface{}) {
@@ -124,12 +167,17 @@ func getFolder(id int) Folder {
 func getFilesFromFolder(folderID int) []File {
 	folder := getFolder(folderID)
 	files := folder.Files
+	for _, file := range files {
+		file.ParentFolder = folder.ID
+		fmt.Println(" ------- ")
+		fmt.Println("Folder: ", folder.ID)
+		fmt.Println("File: ", file.ID)
+		fmt.Println("Name: ", file.Name)
+		fmt.Println("Parent: ", file.ParentFolder)
+	}
+	// spew.Dump("subFiles: ", subfiles)
 	for _, folder := range folder.Folders {
 		subfiles := getFilesFromFolder(folder.ID)
-		for _, subfile := range subfiles {
-			subfile.ParentFolder = folder.ID
-		}
-		// spew.Dump("subFiles: ", subfiles)
 		files = append(files, subfiles...)
 	}
 	return files
