@@ -72,9 +72,8 @@ var BaseURL = "https://www.seedr.cc/rest"
 
 // DlRoot is the download directory
 // dev code
-var DlRoot = "./tmp"
-
-// var DlRoot = "/media/jason/3C72B82272B7DF38/Movies/NotKids"
+// var DlRoot = "./tmp"
+var DlRoot = "/media/jason/3C72B82272B7DF38/Movies/NotKids"
 
 //Username is username
 var Username = "jdale215@gmail.com"
@@ -130,7 +129,7 @@ func main() {
 		files := getFilesFromFolder(96452508)
 		// doNothing(files)
 		downloadFiles(files)
-		spew.Dump("delete queue: ", DeleteQueue)
+		// spew.Dump("delete queue: ", DeleteQueue)
 		deleteDownloaded(DeleteQueue)
 	}
 }
