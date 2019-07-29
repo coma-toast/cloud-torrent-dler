@@ -72,8 +72,9 @@ var BaseURL = "https://www.seedr.cc/rest"
 
 // DlRoot is the download directory
 // dev code
-// var DlRoot = "./tmp"
-var DlRoot = "/media/jason/3C72B82272B7DF38/Movies/NotKids"
+var DlRoot = "./tmp"
+
+// var DlRoot = "/media/jason/3C72B82272B7DF38/Movies/NotKids"
 
 //Username is username
 var Username = "jdale215@gmail.com"
@@ -83,6 +84,8 @@ var Passwd = "Lmo2~C}8fDJ%yj,CpfUv"
 
 // Credentials is the base64 encoded username:password
 var Credentials = b64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", Username, Passwd)))
+
+var DeleteQueue []int
 
 // Write a pid file, but first make sure it doesn't exist with a running pid.
 func alreadyRunning(pidFile string) bool {
@@ -127,6 +130,15 @@ func main() {
 		files := getFilesFromFolder(96452508)
 		// doNothing(files)
 		downloadFiles(files)
+		spew.Dump("delete queue: ", DeleteQueue)
+		deleteDownloaded(DeleteQueue)
+	}
+}
+
+func deleteDownloaded(list []int) {
+	for _, folder := range list {
+		deleteResult := apiCall("DELETE", folder, "folder")
+		spew.Dump(deleteResult)
 	}
 }
 
@@ -168,7 +180,8 @@ func getFilesFromFolder(folderID int) []File {
 	folder := getFolder(folderID)
 	files := folder.Files
 	for _, file := range files {
-		file.ParentFolder = folder.ID
+		DeleteQueue = append(DeleteQueue, folder.ID)
+		// file.ParentFolder = folder.ID
 		fmt.Println(" ------- ")
 		fmt.Println("Folder: ", folder.ID)
 		fmt.Println("File: ", file.ID)
@@ -186,6 +199,7 @@ func getFilesFromFolder(folderID int) []File {
 // Do the actual download of the files
 func downloadFiles(files []File) {
 	for _, file := range files {
+		// isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", file.Name)
 		isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi)$", file.Name)
 		if isAVideo {
 			fmt.Println("Downloading file: " + file.Name)
