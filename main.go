@@ -125,8 +125,8 @@ func main() {
 	if !pid {
 		// Start at the root folder of your choosing (Completed),
 		// recursively searching down, populating the files list
-		// files := getFilesFromFolder(96452508)
-		files := getFilesFromFolder(0)
+		files := getFilesFromFolder(96452508)
+		// files := getFilesFromFolder(0)
 		// doNothing(files)
 		downloadFiles(files)
 		// spew.Dump("delete queue: ", DeleteQueue)
