@@ -1,8 +1,4 @@
-BaseURL:
-  - "https://www.seedr.cc/rest"
-DlRoot:
-  - "/path"
-Username:
-  - "username"
-Passwd:
-  - "password"
+BaseURL: "https://www.seedr.cc/rest"
+DlRoot: "/path"
+Username: "username"
+Passwd: "password"

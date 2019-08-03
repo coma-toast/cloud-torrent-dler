@@ -128,10 +128,8 @@ func main() {
 	if !pid {
 		// Start at the root folder of your choosing (i.e. Completed),
 		// recursively searching down, populating the files list
-		// TODO: make this an argument
 		files := getFilesFromFolder(96452508)
 		downloadFiles(files)
-		// *
 		deleteDownloaded(DeleteQueue)
 	}
 }
@@ -141,11 +139,6 @@ func deleteDownloaded(list []int) {
 		deleteResult := apiCall("DELETE", folder, "folder")
 		spew.Dump(deleteResult)
 	}
-}
-
-func doNothing(nothing interface{}) {
-	spew.Dump(nothing)
-	return
 }
 
 // Simple api call method for gathering info - NOT the actual downloading of the file.
