@@ -69,8 +69,10 @@ var Username string
 var Passwd string
 
 // Credentials is the base64 encoded username:password
-var Credentials = b64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", Username, Passwd)))
+var Credentials string
 
+// DeleteQueue is a list of folders to delete at the end of downloading
+// there may be multiple files in a folder, so we have to wait until the end to delete
 var DeleteQueue []int
 
 // Write a pid file, but first make sure it doesn't exist with a running pid.
@@ -120,6 +122,9 @@ func main() {
 	DlRoot = viper.GetString("DlRoot")
 	Username = viper.GetString("Username")
 	Passwd = viper.GetString("Passwd")
+
+	// Credentials is the base64 encoded username:password
+	Credentials = b64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", Username, Passwd)))
 
 	// DeleteQueue is a list of folders to delete once all the downloads have completed.
 	// Do not delete them right when the download completes, as there could be multiple files in a folder
