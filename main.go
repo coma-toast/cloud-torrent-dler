@@ -1,7 +1,5 @@
 package main
 
-// Lmo2~C}8fDJ%yj,CpfUv
-
 import (
 	b64 "encoding/base64"
 	"encoding/json"
@@ -22,17 +20,17 @@ import (
 
 // Folder is a folder that contains subfolders or files, or both
 type Folder struct {
-	SpaceMax  int64 `json:"space_max"`
-	SpaceUsed int64 `json:"space_used"`
-	// Code      int   `json:"code"`
-	// Timestamp string        `json:"timestamp"`
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	ParentID int    `json:"parent_id"`
-	// Torrents  [] `json:"torrents"`
-	Folders []Folder `json:"folders"`
-	Files   []File   `json:"files"`
-	Result  bool     `json:"result"`
+	SpaceMax  int64    `json:"space_max"`
+	SpaceUsed int64    `json:"space_used"`
+	Code      int      `json:"code"`
+	Timestamp string   `json:"timestamp"`
+	ID        int      `json:"id"`
+	Name      string   `json:"name"`
+	ParentID  int      `json:"parent_id"`
+	Torrents  []string `json:"torrents"`
+	Folders   []Folder `json:"folders"`
+	Files     []File   `json:"files"`
+	Result    bool     `json:"result"`
 }
 
 // SubFolder is a folder in folder - a sort of, Folder Inception, if you will
@@ -105,8 +103,6 @@ func alreadyRunning(pidFile string) bool {
 	// If we get here, then the pidfile didn't exist,
 	// or the pid in it doesn't belong to the user running this app.
 	ioutil.WriteFile(pidFile, []byte(fmt.Sprintf("%d", os.Getpid())), 0664)
-	// * dev code
-	// ioutil.WriteFile(pidFile, []byte(fmt.Sprintf("%d", 29355)), 0664)
 	return false
 }
 
