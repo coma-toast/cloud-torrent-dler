@@ -138,15 +138,18 @@ func main() {
 	}
 }
 
+//TODO: return error
 func deleteDownloaded(list []int) {
 	for _, folder := range list {
+		//TODO: delete, err :=
 		deleteResult := apiCall("DELETE", folder, "folder")
 		spew.Dump(deleteResult)
 	}
 }
 
 // Simple api call method for gathering info - NOT the actual downloading of the file.
-// callType is 'file' or 'folder'
+// callType is 'file' or 'folder'+
+//TODO: return bytes and an error
 func apiCall(method string, id int, callType string) []byte {
 	url := fmt.Sprintf("%s/%s", BaseURL, callType)
 	if id != 0 {
@@ -158,12 +161,17 @@ func apiCall(method string, id int, callType string) []byte {
 	request.SetBasicAuth(Username, Passwd)
 	response, err := client.Do(request)
 	handleError(err)
+	defer response.Body.Close()
 	data, err := ioutil.ReadAll(response.Body)
 	handleError(err)
-	defer response.Body.Close()
+	// if response.StatusCode >= 400 {
+	log.Print(fmt.Errorf("Response Code Error: %d. %s", response.StatusCode, string(data)))
+
+	// }
 	return data
 }
 
+//TODO: return error
 // Get folder info
 func getFolder(id int) Folder {
 	var rootData Folder
@@ -173,6 +181,7 @@ func getFolder(id int) Folder {
 	return rootData
 }
 
+//TODO: return error
 // Get the files in the folder and any subfolders
 func getFilesFromFolder(folderID int) []File {
 	folder := getFolder(folderID)
@@ -192,6 +201,7 @@ func downloadFiles(files []File) {
 		// isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", file.Name)
 		isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi)$", file.Name)
 		if isAVideo {
+			//TODO: break out into separate functions
 			fmt.Println("Downloading file: " + file.Name)
 			path := fmt.Sprintf("%s/%s", DlRoot, file.Name)
 			fileURL := fmt.Sprintf("%s/file/%d", BaseURL, file.ID)
@@ -199,6 +209,7 @@ func downloadFiles(files []File) {
 			handleError(err)
 			defer out.Close()
 
+			//TODO: break out into separate function - dlWithProgress(path) - probably new helper file?
 			client := grab.NewClient()
 
 			req, err := grab.NewRequest(path, fileURL)
@@ -241,6 +252,7 @@ func downloadFiles(files []File) {
 	return
 }
 
+//TODO: once errors are returned above, this is not needed
 func handleError(err error) {
 	if err != nil {
 		panic(err)
