@@ -18,6 +18,15 @@ import (
 	"github.com/spf13/viper"
 )
 
+// config is the configuration struct
+type config struct {
+	BaseURL     string
+	DlRoot      string
+	PidFilePath string
+	Username    string
+	Passwd      string
+}
+
 // Folder is a folder that contains subfolders or files, or both
 type Folder struct {
 	SpaceMax  int64    `json:"space_max"`
@@ -54,17 +63,10 @@ type File struct {
 	ParentFolder   int
 }
 
-// BaseURL is the first part of the REST url
-var BaseURL string
-
-// DlRoot is the download directory
-var DlRoot string
-
-// Username is username
-var Username string
-
-// Passwd is the password
-var Passwd string
+// new config instance
+var (
+	conf *config
+)
 
 // Credentials is the base64 encoded username:password
 var Credentials string
@@ -106,24 +108,32 @@ func alreadyRunning(pidFile string) bool {
 	return false
 }
 
-func main() {
-	viper.SetConfigName("config")
+func getConf() *config {
 	viper.AddConfigPath(".")
+	viper.SetConfigName("config")
 	err := viper.ReadInConfig()
+
 	if err != nil {
 		handleError(err)
 	}
 
-	pidPath := fmt.Sprintf("%s/cloud-torrent-downloader", viper.GetString("PidFilePath"))
+	conf := &config{}
+	err = viper.Unmarshal(conf)
+
+	if err != nil {
+		fmt.Printf("unable to decode into config struct, %v", err)
+	}
+
+	return conf
+}
+
+func main() {
+	conf = getConf()
+	pidPath := fmt.Sprintf("%s/cloud-torrent-downloader", conf.PidFilePath)
 	pid := alreadyRunning(pidPath)
 
-	BaseURL = viper.GetString("BaseURL")
-	DlRoot = viper.GetString("DlRoot")
-	Username = viper.GetString("Username")
-	Passwd = viper.GetString("Passwd")
-
 	// Credentials is the base64 encoded username:password
-	Credentials = b64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", Username, Passwd)))
+	Credentials = b64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", conf.Username, conf.Passwd)))
 
 	// DeleteQueue is a list of folders to delete once all the downloads have completed.
 	// Do not delete them right when the download completes, as there could be multiple files in a folder
@@ -132,33 +142,41 @@ func main() {
 	if !pid {
 		// Start at the root folder of your choosing (i.e. Completed),
 		// recursively searching down, populating the files list
-		files := getFilesFromFolder(96452508)
+		files, err := getFilesFromFolder(96452508)
+		if err != nil {
+			fmt.Println(fmt.Errorf("Error: %s", err))
+			return
+		}
 		downloadFiles(files)
 		deleteDownloaded(DeleteQueue)
 	}
 }
 
-//TODO: return error
-func deleteDownloaded(list []int) {
+func deleteDownloaded(list []int) error {
+	var err error
 	for _, folder := range list {
-		//TODO: delete, err :=
-		deleteResult := apiCall("DELETE", folder, "folder")
+		deleteResult, err := apiCall("DELETE", folder, "folder")
+		if err != nil {
+			fmt.Println(fmt.Errorf("Error: %s", err))
+		}
 		spew.Dump(deleteResult)
 	}
+
+	return err
 }
 
 // Simple api call method for gathering info - NOT the actual downloading of the file.
 // callType is 'file' or 'folder'+
 //TODO: return bytes and an error
-func apiCall(method string, id int, callType string) []byte {
-	url := fmt.Sprintf("%s/%s", BaseURL, callType)
+func apiCall(method string, id int, callType string) ([]byte, error) {
+	url := fmt.Sprintf("%s/%s", conf.BaseURL, callType)
 	if id != 0 {
 		url = fmt.Sprintf("%s/%d", url, id)
 	}
 	client := &http.Client{}
 	request, err := http.NewRequest(method, url, nil)
 	handleError(err)
-	request.SetBasicAuth(Username, Passwd)
+	request.SetBasicAuth(conf.Username, conf.Passwd)
 	response, err := client.Do(request)
 	handleError(err)
 	defer response.Body.Close()
@@ -168,43 +186,52 @@ func apiCall(method string, id int, callType string) []byte {
 	log.Print(fmt.Errorf("Response Code Error: %d. %s", response.StatusCode, string(data)))
 
 	// }
-	return data
+	return data, err
 }
 
-//TODO: return error
 // Get folder info
-func getFolder(id int) Folder {
+func getFolder(id int) (Folder, error) {
 	var rootData Folder
-	data := apiCall("GET", id, "folder")
-	err := json.Unmarshal(data, &rootData)
+	data, err := apiCall("GET", id, "folder")
+	if err != nil {
+		return rootData, err
+	}
+	err = json.Unmarshal(data, &rootData)
 	handleError(err)
-	return rootData
+	return rootData, err
+
 }
 
-//TODO: return error
 // Get the files in the folder and any subfolders
-func getFilesFromFolder(folderID int) []File {
-	folder := getFolder(folderID)
+func getFilesFromFolder(folderID int) ([]File, error) {
+	folder, err := getFolder(folderID)
 	files := folder.Files
+	if err != nil {
+		return files, err
+	}
 	DeleteQueue = append(DeleteQueue, folder.ID)
 	for _, folder := range folder.Folders {
-		subfiles := getFilesFromFolder(folder.ID)
+		subfiles, err := getFilesFromFolder(folder.ID)
+		if err != nil {
+			fmt.Println(fmt.Errorf("Error: %s", err))
+		}
 		files = append(files, subfiles...)
 	}
-	return files
+	return files, err
 }
 
 // Do the actual download of the files
-func downloadFiles(files []File) {
+func downloadFiles(files []File) error {
+	var err error
 	for _, file := range files {
 		// * dev code
-		// isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", file.Name)
-		isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi)$", file.Name)
+		isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", file.Name)
+		// isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi)$", file.Name)
 		if isAVideo {
 			//TODO: break out into separate functions
 			fmt.Println("Downloading file: " + file.Name)
-			path := fmt.Sprintf("%s/%s", DlRoot, file.Name)
-			fileURL := fmt.Sprintf("%s/file/%d", BaseURL, file.ID)
+			path := fmt.Sprintf("%s/%s", conf.DlRoot, file.Name)
+			fileURL := fmt.Sprintf("%s/file/%d", conf.BaseURL, file.ID)
 			out, err := os.Create(path)
 			handleError(err)
 			defer out.Close()
@@ -249,7 +276,7 @@ func downloadFiles(files []File) {
 			fmt.Println("Download complete.")
 		}
 	}
-	return
+	return err
 }
 
 //TODO: once errors are returned above, this is not needed
