@@ -107,13 +107,16 @@ func alreadyRunning(pidFile string) bool {
 }
 
 func main() {
-	pid := alreadyRunning("cloud-torrent-downloader")
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
 	err := viper.ReadInConfig()
 	if err != nil {
 		handleError(err)
 	}
+
+	pidPath := fmt.Sprintf("%s/cloud-torrent-downloader", viper.GetString("PidFilePath"))
+	pid := alreadyRunning(pidPath)
+
 	BaseURL = viper.GetString("BaseURL")
 	DlRoot = viper.GetString("DlRoot")
 	Username = viper.GetString("Username")
