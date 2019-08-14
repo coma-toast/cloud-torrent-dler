@@ -1,5 +1,6 @@
 BaseURL: "https://www.seedr.cc/rest"
 DlRoot: "/path"
 PidFilePath: "/path"
+CompletedFolder: 123456
 Username: "username"
 Passwd: "password"

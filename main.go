@@ -20,11 +20,12 @@ import (
 
 // config is the configuration struct
 type config struct {
-	BaseURL     string
-	DlRoot      string
-	PidFilePath string
-	Username    string
-	Passwd      string
+	BaseURL         string
+	DlRoot          string
+	PidFilePath     string
+	CompletedFolder int
+	Username        string
+	Passwd          string
 }
 
 // Folder is a folder that contains subfolders or files, or both
@@ -142,7 +143,7 @@ func main() {
 	if !pid {
 		// Start at the root folder of your choosing (i.e. Completed),
 		// recursively searching down, populating the files list
-		files, err := getFilesFromFolder(96452508)
+		files, err := getFilesFromFolder(conf.CompletedFolder)
 		if err != nil {
 			fmt.Println(fmt.Errorf("Error: %s", err))
 			return
