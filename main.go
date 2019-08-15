@@ -226,8 +226,8 @@ func downloadFiles(files []File) error {
 	var err error
 	for _, file := range files {
 		// * dev code
-		isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", file.Name)
-		// isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi)$", file.Name)
+		// isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", file.Name)
+		isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi)$", file.Name)
 		if isAVideo {
 			//TODO: break out into separate functions
 			fmt.Println("Downloading file: " + file.Name)
