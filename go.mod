@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	cloud.google.com/go v0.43.0 // indirect
+	github.com/akamensky/argparse v0.0.0-20191006154803-1427fe674291
 	github.com/cavaliercoder/grab v2.0.0+incompatible
 	github.com/coreos/bbolt v1.3.3 // indirect
 	github.com/coreos/etcd v3.3.13+incompatible // indirect
@@ -27,6 +28,7 @@ require (
 	github.com/prometheus/common v0.6.0 // indirect
 	github.com/prometheus/procfs v0.0.3 // indirect
 	github.com/rogpeppe/fastuuid v1.2.0 // indirect
+	github.com/secsy/goftp v0.0.0-20190720192957-f31499d7c79a
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect

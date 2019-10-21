@@ -13,8 +13,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/akamensky/argparse"
 	"github.com/cavaliercoder/grab"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/secsy/goftp"
 	"github.com/spf13/viper"
 )
 
@@ -130,6 +132,8 @@ func getConf() *config {
 
 func main() {
 	conf = getConf()
+	parser := argparse.NewParser()
+	var myString *string = parser.String("s", "string", ...)
 	pidPath := fmt.Sprintf("%s/cloud-torrent-downloader", conf.PidFilePath)
 	pid := alreadyRunning(pidPath)
 
@@ -188,6 +192,25 @@ func apiCall(method string, id int, callType string) ([]byte, error) {
 
 	// }
 	return data, err
+}
+
+func ftpCall() error {
+	ftpConfig := goftp.Config{
+		User:               conf.Username,
+		Password:           conf.Passwd,
+		ConnectionsPerHost: 10,
+		Timeout:            10 * time.Second,
+		Logger:             os.Stderr,
+	}
+
+	ftp, err := goftp.DialConfig(ftpConfig, "ftp.seedr.cc")
+	if err != nil {
+		return err
+	}
+	list, err := ftp.ReadDir("/")
+	fmt.Println(list)
+
+	return err
 }
 
 // Get folder info
