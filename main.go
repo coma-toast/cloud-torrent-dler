@@ -9,16 +9,13 @@ import (
 	"net/http"
 	"os"
 	"regexp"
-	"strconv"
-	"syscall"
 	"time"
 
-	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/pidcheck"
-	"github.com/akamensky/argparse"
 	"github.com/cavaliercoder/grab"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/secsy/goftp"
 	"github.com/spf13/viper"
+	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/pidcheck"
 )
 
 // config is the configuration struct
@@ -79,8 +76,6 @@ var Credentials string
 // there may be multiple files in a folder, so we have to wait until the end to delete
 var DeleteQueue []int
 
-
-
 func getConf() *config {
 	viper.AddConfigPath(".")
 	viper.SetConfigName("config")
@@ -102,10 +97,9 @@ func getConf() *config {
 
 func main() {
 	conf = getConf()
-	parser := argparse.NewParser()
-	var myString *string = parser.String("s", "string", ...)
+
 	pidPath := fmt.Sprintf("%s/cloud-torrent-downloader", conf.PidFilePath)
-	pid := alreadyRunning(pidPath)
+	pid := pidcheck.AlreadyRunning(pidPath)
 
 	// Credentials is the base64 encoded username:password
 	Credentials = b64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", conf.Username, conf.Passwd)))
@@ -141,7 +135,7 @@ func deleteDownloaded(list []int) error {
 }
 
 // Simple api call method for gathering info - NOT the actual downloading of the file.
-// callType is 'file' or 'folder'+
+// callType is 'file' or 'folder'
 //TODO: return bytes and an error
 func apiCall(method string, id int, callType string) ([]byte, error) {
 	url := fmt.Sprintf("%s/%s", conf.BaseURL, callType)

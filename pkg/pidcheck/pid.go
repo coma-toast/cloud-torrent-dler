@@ -10,7 +10,7 @@ import (
 )
 
 // Write a pid file, but first make sure it doesn't exist with a running pid.
-func alreadyRunning(pidFile string) bool {
+func AlreadyRunning(pidFile string) bool {
 	// Read in the pid file as a slice of bytes.
 	if piddata, err := ioutil.ReadFile(pidFile); err == nil {
 		// Convert the file contents to an integer.
