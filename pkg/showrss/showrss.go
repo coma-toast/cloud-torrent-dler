@@ -36,10 +36,7 @@ func GetNewEpisodes(url string, interval int, c chan []string, wg *sync.WaitGrou
 	currentState, _ := GetShows(url)
 	for _, currentListItem := range currentState.Item {
 		id := sort.SearchInts(initEpisodes, currentListItem.TVEpisodeID)
-		// TODO: remove dev code
-		if id > 0 {
-			// if id >= 0 {
-			// fmt.Println("Already exists, skipping...")
+		if id >= 0 {
 			continue
 		}
 		initEpisodes = append(initEpisodes, currentListItem.TVEpisodeID)
