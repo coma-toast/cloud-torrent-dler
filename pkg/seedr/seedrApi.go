@@ -71,7 +71,6 @@ func (c Client) AddMagnet(magnet string) error {
 }
 
 // 	out, err := os.Create(path)
-// 	handleError(err)
 // 	defer out.Close()
 
 // 	// progress bar

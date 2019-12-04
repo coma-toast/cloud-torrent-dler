@@ -11,6 +11,7 @@ type config struct {
 	BaseURL         string
 	DlRoot          string
 	PidFilePath     string
+	CachePath       string
 	CompletedFolder string
 	ShowRSS         string
 	Username        string
@@ -49,7 +50,7 @@ func getConf() *config {
 	err := viper.ReadInConfig()
 
 	if err != nil {
-		handleError(err)
+		panic(err)
 	}
 
 	conf := &config{}

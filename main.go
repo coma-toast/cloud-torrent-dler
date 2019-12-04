@@ -4,12 +4,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sync"
 	"time"
 
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/showrss"
-
-	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/pidcheck"
 )
 
 // SeedrInstance is the instance
@@ -19,13 +16,96 @@ type SeedrInstance interface {
 	Add(magnet string) error
 }
 
-// AddMagnet adds a magnet link to Seedr for downloading
-func AddMagnet(instance SeedrInstance, magnet string, wg *sync.WaitGroup) {
-	defer wg.Done()
-	err := instance.Add(magnet)
+type Magnet struct {
+	ID   int
+	link string
+}
+
+// One cache to rule them all
+var cache = &Cache{}
+
+func main() {
+
+	conf := getConf()
+	err := cache.Initialize(conf.CachePath)
 	if err != nil {
-		log.Printf("Error adding magnet: %s\n", err)
+		log.Println(err)
 	}
+	// TODO: re-write this mess I found on the internet
+	// pidPath := fmt.Sprintf("%s/cloud-torrent-downloader", conf.PidFilePath)
+	// pid := pidcheck.AlreadyRunning(pidPath)
+	// if pid {
+	// 	os.Exit(1)
+	// }
+
+	selectedSeedr := conf.GetSeedrInstance()
+	_ = selectedSeedr
+
+	// Channel so we can continuously monitor new episodes being added to showrss
+	magnetChannel := make(chan Magnet)
+	dontExit := make(chan bool)
+
+	// ticker to control how often the loop runs
+	tick := time.NewTicker(time.Second * 5)
+
+	go func() {
+		for {
+			magnet := <-magnetChannel
+			err := AddMagnet(selectedSeedr, magnet)
+			if err != nil {
+				log.Println(err)
+			}
+		}
+	}()
+
+	// Do this for ever and ever
+	go func() {
+		for range tick.C {
+			newMagnets, err := getNewEpisodes(conf.ShowRSS)
+			if err != nil {
+				log.Println(err)
+			}
+			for _, link := range newMagnets {
+				magnetChannel <- link
+			}
+		}
+	}()
+
+	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
+	// list, err := findAllToDownload(selectedSeedr, conf.CompletedFolder, conf.UseFTP)
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// for _, file := range list {
+	// 	// spew.Dump("FILE", file)
+	// 	err = selectedSeedr.Get(file, conf.DlRoot)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// }
+
+	// Waiting for a channel that never comes...
+	<-dontExit
+}
+
+// AddMagnet adds a magnet link to Seedr for downloading
+func AddMagnet(instance SeedrInstance, data Magnet) error {
+	if cache.IsSet(data.ID) {
+		return nil
+	}
+	fmt.Println("adding ", data.ID)
+	// err := instance.Add(data.link)
+	// if err != nil {
+	// 	return err
+	// }
+
+	err := cache.Set(data.ID, data.link)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func findAllToDownload(instance SeedrInstance, path string, ftp bool) ([]string, error) {
@@ -60,55 +140,21 @@ func findAllToDownload(instance SeedrInstance, path string, ftp bool) ([]string,
 
 // var DeleteQueue []int
 
-func main() {
-	// var downloadList []string
-	conf := getConf()
-	pidPath := fmt.Sprintf("%s/cloud-torrent-downloader", conf.PidFilePath)
-	pid := pidcheck.AlreadyRunning(pidPath)
-	if pid {
-		os.Exit(1)
-	}
-
-	// Do this for ever and ever
-	for {
-		// Channel so we can continuously monitor new episodes being added to showrss
-		c := make(chan []string)
-		var wg sync.WaitGroup
-
-		wg.Add(1)
-		go showrss.GetNewEpisodes(conf.ShowRSS, 3000, c, &wg)
-		selectedSeedr := conf.GetSeedrInstance()
-		for _, magnet := range <-c {
-			wg.Add(1)
-			go AddMagnet(selectedSeedr, magnet, &wg)
-		}
-
-		// list, err := findAllToDownload(selectedSeedr, conf.CompletedFolder, conf.UseFTP)
-		// if err != nil {
-		// 	panic(err)
-		// }
-
-		// for _, file := range list {
-		// 	// spew.Dump("FILE", file)
-		// 	err = selectedSeedr.Get(file, conf.DlRoot)
-		// 	if err != nil {
-		// 		panic(err)
-		// 	}
-		// }
-
-		wg.Wait()
-		// TODO: remove dev code
-		// fmt.Println("sleep....")
-		// time.Sleep(time.Second * 3)
-		// fmt.Println("awake")
-		// 5 min timer
-		time.Sleep(time.Second * 300)
-	}
-}
-
-//TODO: once errors are returned above, this is not needed
-func handleError(err error) {
+// TODO: move to a key/value map - id:magnet
+// initEpisodes := []int{}
+// getNewEpisodes is a loop to look for new shows added to the RSS feed to then add to the download queue
+func getNewEpisodes(url string) ([]Magnet, error) {
+	returnData := []Magnet{}
+	episodes, err := showrss.GetAllEpisodeLinks(url)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
+	for episodeID, magnetLink := range episodes {
+		returnData = append(returnData, Magnet{
+			ID:   episodeID,
+			link: magnetLink,
+		})
+	}
+
+	return returnData, nil
 }

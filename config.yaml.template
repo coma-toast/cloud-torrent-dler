@@ -1,5 +1,6 @@
 DlRoot: "/path"
 PidFilePath: "/path"
+CachePath: ""
 CompletedFolder: "Completed"
 Username: "username"
 Passwd: "password"

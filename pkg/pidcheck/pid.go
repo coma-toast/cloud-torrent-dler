@@ -22,19 +22,19 @@ func AlreadyRunning(pidFile string) bool {
 					fmt.Println("PID already running!")
 					// We only get an error if the pid isn't running, or it's not ours.
 					err := fmt.Errorf("pid already running: %d", pid)
-					log.Print(err)
+					log.Print(err.Error() + "1")
 					return true
 				}
-				log.Print(err)
+				log.Print(err.Error() + "2")
 
 			} else {
-				log.Print(err)
+				log.Print(err.Error() + "3")
 			}
 		} else {
-			log.Print(err)
+			log.Print(err.Error() + "4")
 		}
 	} else {
-		log.Print(err)
+		log.Print(err.Error() + "5")
 	}
 	// If we get here, then the pidfile didn't exist,
 	// or the pid in it doesn't belong to the user running this app.
