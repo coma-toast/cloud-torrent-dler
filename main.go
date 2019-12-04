@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -94,11 +93,11 @@ func AddMagnet(instance SeedrInstance, data Magnet) error {
 		return nil
 	}
 	if !dryRun {
-		fmt.Println("adding ", data.ID)
-		// err := instance.Add(data.link)
-		// if err != nil {
-		// 	return err
-		// }
+		// fmt.Println("adding ", data.ID)
+		err := instance.Add(data.link)
+		if err != nil {
+			return err
+		}
 	}
 
 	err := cache.Set(data.ID, data.link)
