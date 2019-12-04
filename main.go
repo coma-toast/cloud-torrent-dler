@@ -47,12 +47,13 @@ func main() {
 	// Channel so we can continuously monitor new episodes being added to showrss
 	dontExit := make(chan bool)
 
-	checkNewEpisodes(selectedSeedr)
-
-	// ticker to control how often the loop runs
-	for range time.NewTicker(time.Minute * 5).C {
+	go func() {
 		checkNewEpisodes(selectedSeedr)
-	}
+		// ticker to control how often the loop runs
+		for range time.NewTicker(time.Minute * 5).C {
+			checkNewEpisodes(selectedSeedr)
+		}
+	}()
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 	// list, err := findAllToDownload(selectedSeedr, conf.CompletedFolder, conf.UseFTP)
 	// if err != nil {
