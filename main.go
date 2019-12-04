@@ -23,14 +23,20 @@ type Magnet struct {
 
 // One cache to rule them all
 var cache = &Cache{}
+var dryRun = false
 
 func main() {
 
-	conf := getConf()
+	conf = getConf()
 	err := cache.Initialize(conf.CachePath)
 	if err != nil {
+		dryRun = true
 		log.Println(err)
 	}
+
+	selectedSeedr := conf.GetSeedrInstance()
+	_ = selectedSeedr
+
 	// TODO: re-write this mess I found on the internet
 	// pidPath := fmt.Sprintf("%s/cloud-torrent-downloader", conf.PidFilePath)
 	// pid := pidcheck.AlreadyRunning(pidPath)
@@ -38,39 +44,15 @@ func main() {
 	// 	os.Exit(1)
 	// }
 
-	selectedSeedr := conf.GetSeedrInstance()
-	_ = selectedSeedr
-
 	// Channel so we can continuously monitor new episodes being added to showrss
-	magnetChannel := make(chan Magnet)
 	dontExit := make(chan bool)
 
+	checkNewEpisodes(selectedSeedr)
+
 	// ticker to control how often the loop runs
-	tick := time.NewTicker(time.Second * 5)
-
-	go func() {
-		for {
-			magnet := <-magnetChannel
-			err := AddMagnet(selectedSeedr, magnet)
-			if err != nil {
-				log.Println(err)
-			}
-		}
-	}()
-
-	// Do this for ever and ever
-	go func() {
-		for range tick.C {
-			newMagnets, err := getNewEpisodes(conf.ShowRSS)
-			if err != nil {
-				log.Println(err)
-			}
-			for _, link := range newMagnets {
-				magnetChannel <- link
-			}
-		}
-	}()
-
+	for range time.NewTicker(time.Minute * 5).C {
+		checkNewEpisodes(selectedSeedr)
+	}
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 	// list, err := findAllToDownload(selectedSeedr, conf.CompletedFolder, conf.UseFTP)
 	// if err != nil {
@@ -89,16 +71,34 @@ func main() {
 	<-dontExit
 }
 
+func checkNewEpisodes(selectedSeedr SeedrInstance) {
+	initializeMagnetList, err := getNewEpisodes(conf.ShowRSS)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	for _, magnet := range initializeMagnetList {
+		err := AddMagnet(selectedSeedr, magnet)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+	}
+	dryRun = false
+}
+
 // AddMagnet adds a magnet link to Seedr for downloading
 func AddMagnet(instance SeedrInstance, data Magnet) error {
 	if cache.IsSet(data.ID) {
 		return nil
 	}
-	fmt.Println("adding ", data.ID)
-	// err := instance.Add(data.link)
-	// if err != nil {
-	// 	return err
-	// }
+	if !dryRun {
+		fmt.Println("adding ", data.ID)
+		// err := instance.Add(data.link)
+		// if err != nil {
+		// 	return err
+		// }
+	}
 
 	err := cache.Set(data.ID, data.link)
 	if err != nil {
