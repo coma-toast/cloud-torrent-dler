@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"time"
 
+	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/pidcheck"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/showrss"
 )
 
@@ -25,7 +27,6 @@ var cache = &Cache{}
 var dryRun = false
 
 func main() {
-
 	conf = getConf()
 	err := cache.Initialize(conf.CachePath)
 	if err != nil {
@@ -34,14 +35,13 @@ func main() {
 	}
 
 	selectedSeedr := conf.GetSeedrInstance()
-	_ = selectedSeedr
+	// _ = selectedSeedr
 
-	// TODO: re-write this mess I found on the internet
-	// pidPath := fmt.Sprintf("%s/cloud-torrent-downloader", conf.PidFilePath)
-	// pid := pidcheck.AlreadyRunning(pidPath)
-	// if pid {
-	// 	os.Exit(1)
-	// }
+	pidPath := fmt.Sprintf("%s/cloud-torrent-downloader", conf.PidFilePath)
+	pid := pidcheck.AlreadyRunning(pidPath)
+	if pid {
+		os.Exit(1)
+	}
 
 	// Channel so we can continuously monitor new episodes being added to showrss
 	dontExit := make(chan bool)

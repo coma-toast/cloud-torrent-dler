@@ -6,38 +6,72 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"syscall"
 )
 
-// Write a pid file, but first make sure it doesn't exist with a running pid.
+// AlreadyRunning determines if there is a process already running
 func AlreadyRunning(pidFile string) bool {
 	// Read in the pid file as a slice of bytes.
-	if piddata, err := ioutil.ReadFile(pidFile); err == nil {
-		// Convert the file contents to an integer.
-		if pid, err := strconv.Atoi(string(piddata)); err == nil {
-			// Look for the pid in the process list.
-			if process, err := os.FindProcess(pid); err == nil {
-				// Send the process a signal zero kill.
-				if err := process.Signal(syscall.Signal(0)); err == nil {
-					fmt.Println("PID already running!")
-					// We only get an error if the pid isn't running, or it's not ours.
-					err := fmt.Errorf("pid already running: %d", pid)
-					log.Print(err.Error() + "1")
-					return true
-				}
-				log.Print(err.Error() + "2")
+	pidData, err := ioutil.ReadFile(pidFile)
+	if err != nil {
+		if strings.Contains(err.Error(), "no such file or directory") {
+			err = writePid(pidFile)
+			if err != nil {
+				log.Println(err)
 
-			} else {
-				log.Print(err.Error() + "3")
+				return true
 			}
-		} else {
-			log.Print(err.Error() + "4")
+
+			return false
 		}
-	} else {
-		log.Print(err.Error() + "5")
+
+		return true
+	}
+
+	if len(pidData) == 0 {
+		err = writePid(pidFile)
+		if err != nil {
+			log.Println(err)
+
+			return true
+		}
+
+		return false
+	}
+
+	// Convert the file contents to an integer.
+	pid, err := strconv.Atoi(string(pidData))
+	if err != nil {
+		fmt.Println(err)
+		return true
+	}
+
+	// Look for the pid in the process list.
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		fmt.Println(err)
+		return true
+	}
+	// Send the process a signal zero kill.
+	err = process.Signal(syscall.Signal(0))
+	if err != nil {
+		fmt.Printf("pid already running: %d", pid)
+		return true
 	}
 	// If we get here, then the pidfile didn't exist,
 	// or the pid in it doesn't belong to the user running this app.
-	ioutil.WriteFile(pidFile, []byte(fmt.Sprintf("%d", os.Getpid())), 0664)
+	err = writePid(pidFile)
+	if err != nil {
+		fmt.Println("Failed to write pid file: ", err)
+	}
+	fmt.Println(pid, process, pidFile)
+
 	return false
+}
+
+func writePid(pidFile string) error {
+	err := ioutil.WriteFile(pidFile, []byte(fmt.Sprintf("%d", os.Getpid())), 0664)
+
+	return err
 }
