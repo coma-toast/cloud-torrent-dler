@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/pidcheck"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/showrss"
 )
@@ -54,18 +55,20 @@ func main() {
 		}
 	}()
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
-	// list, err := findAllToDownload(selectedSeedr, conf.CompletedFolder, conf.UseFTP)
-	// if err != nil {
-	// 	panic(err)
-	// }
 
-	// for _, file := range list {
-	// 	// spew.Dump("FILE", file)
-	// 	err = selectedSeedr.Get(file, conf.DlRoot)
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-	// }
+	// downloadWorker()
+	list, err := findAllToDownload(selectedSeedr, conf.CompletedFolder, conf.UseFTP)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, file := range list {
+		spew.Dump("FILE", file)
+		// 	err = selectedSeedr.Get(file, conf.DlRoot)
+		// 	if err != nil {
+		// 		panic(err)
+		// 	}
+	}
 
 	// Waiting for a channel that never comes...
 	<-dontExit

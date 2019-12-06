@@ -56,8 +56,10 @@ func AlreadyRunning(pidFile string) bool {
 	// Send the process a signal zero kill.
 	err = process.Signal(syscall.Signal(0))
 	if err != nil {
-		fmt.Printf("pid already running: %d", pid)
-		return true
+		if !strings.Contains(err.Error(), "process already finished") {
+			fmt.Printf("pid already running: %d", pid)
+			return true
+		}
 	}
 	// If we get here, then the pidfile didn't exist,
 	// or the pid in it doesn't belong to the user running this app.
@@ -65,7 +67,6 @@ func AlreadyRunning(pidFile string) bool {
 	if err != nil {
 		fmt.Println("Failed to write pid file: ", err)
 	}
-	fmt.Println(pid, process, pidFile)
 
 	return false
 }
