@@ -54,6 +54,11 @@ func main() {
 			checkNewEpisodes(selectedSeedr)
 		}
 	}()
+
+	// TODO: completed folder should be an array of folders to be monitored with
+	// their own download destinations - for example, you can do a kids/not kids
+	// download separately.
+
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 
 	// downloadWorker()

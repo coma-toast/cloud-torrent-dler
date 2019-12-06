@@ -10,3 +10,8 @@ Auto-download from a cloud torrent provider (Seedr) and save in a folder (expose
 - make a `Completed` folder in Seedr (to prevent downloading then deleting in-progress downloads)
 - `go run *.go`
 - There is no way to programmatically do this without a paid Seedr account :(
+
+## Notes
+
+- Shows added via ShowRSS will be automatically downloaded
+- Movies are assumed to be manually added and folders will be monitored

@@ -14,7 +14,7 @@ type Folder struct {
 	ID         int         `json:"id"`
 	FolderName string      `json:"name"`
 	ParentID   int         `json:"parent_id"`
-	Torrents   []string    `json:"torrents"`
+	Torrents   []Torrents  `json:"torrents"`
 	Folders    []SubFolder `json:"folders"`
 	Files      []File      `json:"files"`
 	Result     bool        `json:"result"`
