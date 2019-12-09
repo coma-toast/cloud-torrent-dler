@@ -10,6 +10,8 @@ import (
 	"os"
 	"reflect"
 	"strings"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 // Client is the Seedr Client
@@ -44,7 +46,7 @@ func (c *Client) call(method string, url string, payload interface{}, target int
 		c.client = &http.Client{}
 	}
 	// TODO: throw error if >= than 400
-	jsonData := []byte{}
+	var jsonData []byte
 	var err error
 	var postData string
 
@@ -76,6 +78,7 @@ func (c *Client) call(method string, url string, payload interface{}, target int
 	defer resp.Body.Close()
 
 	responseBody, err := ioutil.ReadAll(resp.Body)
+	spew.Dump("client.go responseBody:", responseBody)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -108,6 +111,7 @@ func (c *Client) call(method string, url string, payload interface{}, target int
 	if target != nil && reflect.TypeOf(target).String() != "os.File" {
 		err = json.Unmarshal(responseBody, target)
 		if err != nil {
+			fmt.Println("here")
 			return responseBody, err
 		}
 	}

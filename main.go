@@ -62,17 +62,22 @@ func main() {
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 
 	// downloadWorker()
-	list, err := findAllToDownload(selectedSeedr, conf.CompletedFolder, conf.UseFTP)
-	if err != nil {
-		panic(err)
-	}
+	for range time.NewTicker(time.Second * 5).C {
+		for _, downloadFolder := range conf.CompletedFolder {
+			list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
+			if err != nil {
+				panic(err)
+			}
 
-	for _, file := range list {
-		spew.Dump("FILE", file)
-		// 	err = selectedSeedr.Get(file, conf.DlRoot)
-		// 	if err != nil {
-		// 		panic(err)
-		// 	}
+			for _, file := range list {
+				spew.Dump("FILE", file)
+				err = selectedSeedr.Get(file, conf.DlRoot)
+				if err != nil {
+					spew.Dump(err)
+					os.Exit(1)
+				}
+			}
+		}
 	}
 
 	// Waiting for a channel that never comes...
