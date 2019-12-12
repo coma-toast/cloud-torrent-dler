@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -18,21 +17,31 @@ type SeedrInstance interface {
 	Add(magnet string) error
 }
 
+// Magnet is for magnet links and their ID
 type Magnet struct {
 	ID   int
 	link string
+}
+
+// DownloadItem is the information needed for the download queue
+type DownloadItem struct {
+	ID         int
+	Name       string
+	FolderPath string
 }
 
 // One cache to rule them all
 var cache = &Cache{}
 var dryRun = false
 
+// var downloadQueue = []DownloadItem{}
+
 func main() {
 	conf = getConf()
 	err := cache.Initialize(conf.CachePath)
 	if err != nil {
 		dryRun = true
-		log.Println(err)
+		fmt.Println(err)
 	}
 
 	selectedSeedr := conf.GetSeedrInstance()
@@ -65,16 +74,27 @@ func main() {
 	for range time.NewTicker(time.Second * 5).C {
 		for _, downloadFolder := range conf.CompletedFolder {
 			list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
+			// spew.Dump(list)
 			if err != nil {
 				panic(err)
 			}
 
 			for _, file := range list {
-				spew.Dump("FILE", file)
-				err = selectedSeedr.Get(file, conf.DlRoot)
-				if err != nil {
-					spew.Dump(err)
-					os.Exit(1)
+				// spew.Dump("FILE", file)
+				filePath := fmt.Sprintf("%s/%s", conf.DlRoot, file.Name)
+				spew.Dump(filePath)
+				_, err := os.Open(filePath)
+				spew.Dump(err)
+				if os.IsExist(err) {
+					spew.Dump("EXISTSSS")
+					fmt.Printf("file %s exists, skipping ", file.Name)
+				} else {
+					spew.Dump("NOT EXISTS")
+					err = selectedSeedr.Get(file.Name, conf.DlRoot)
+					if err != nil {
+						spew.Dump(err)
+						os.Exit(1)
+					}
 				}
 			}
 		}
@@ -87,13 +107,13 @@ func main() {
 func checkNewEpisodes(selectedSeedr SeedrInstance) {
 	initializeMagnetList, err := getNewEpisodes(conf.ShowRSS)
 	if err != nil {
-		log.Println(err)
+		fmt.Println(err)
 		return
 	}
 	for _, magnet := range initializeMagnetList {
 		err := AddMagnet(selectedSeedr, magnet)
 		if err != nil {
-			log.Println(err)
+			fmt.Println(err)
 			continue
 		}
 	}
@@ -106,7 +126,7 @@ func AddMagnet(instance SeedrInstance, data Magnet) error {
 		return nil
 	}
 	if !dryRun {
-		// fmt.Println("adding ", data.ID)
+		fmt.Printf("Adding magnet for episode: %d\n", data.ID)
 		err := instance.Add(data.link)
 		if err != nil {
 			return err
@@ -121,28 +141,30 @@ func AddMagnet(instance SeedrInstance, data Magnet) error {
 	return nil
 }
 
-func findAllToDownload(instance SeedrInstance, path string, ftp bool) ([]string, error) {
+func findAllToDownload(instance SeedrInstance, path string, ftp bool) ([]DownloadItem, error) {
 	files, err := instance.List(path)
 
 	if err != nil {
-		return []string{}, err
+		return []DownloadItem{}, err
 	}
-	downloads := []string{}
+	downloads := []DownloadItem{}
 
 	for _, file := range files {
-		var fullPath string
+		var currentItem DownloadItem
+		currentItem.Name = file.Name()
+		currentItem.ID = 0
 		if ftp {
-			fullPath = path + "/" + file.Name()
+			currentItem.FolderPath = path + "/" + file.Name()
 		} else {
-			fullPath = file.Name()
+			currentItem.FolderPath = file.Name()
 		}
 
 		if !file.IsDir() {
-			downloads = append(downloads, fullPath)
+			downloads = append(downloads, currentItem)
 		} else {
-			newDownloads, err := findAllToDownload(instance, fullPath, ftp)
+			newDownloads, err := findAllToDownload(instance, currentItem.FolderPath, ftp)
 			if err != nil {
-				return []string{}, err
+				return []DownloadItem{}, err
 			}
 			downloads = append(downloads, newDownloads...)
 		}
@@ -153,8 +175,6 @@ func findAllToDownload(instance SeedrInstance, path string, ftp bool) ([]string,
 
 // var DeleteQueue []int
 
-// TODO: move to a key/value map - id:magnet
-// initEpisodes := []int{}
 // getNewEpisodes is a loop to look for new shows added to the RSS feed to then add to the download queue
 func getNewEpisodes(url string) ([]Magnet, error) {
 	returnData := []Magnet{}

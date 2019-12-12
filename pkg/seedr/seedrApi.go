@@ -63,41 +63,7 @@ func (c Client) DownloadFileByID(id int, destination string) error {
 func (c Client) AddMagnet(magnet string) error {
 	var err error
 	url := fmt.Sprintf("/torrent/magnet")
-	// payload := []string{"magnet", magnet}
-	// result, err := c.call("POST", url, payload, nil)
 	result, err := c.call("POST", url, magnet, nil)
 	spew.Dump("Result: ", result)
 	return err
 }
-
-// 	out, err := os.Create(path)
-// 	defer out.Close()
-
-// 	// progress bar
-// 	t := time.NewTicker(time.Second)
-// 	defer t.Stop()
-
-// Loop:
-// 	for {
-// 		select {
-// 		case <-t.C:
-// 			fmt.Printf("  transferred %v / %v bytes (%.2f%%)\n",
-// 				resp.BytesComplete(),
-// 				resp.Size,
-// 				100*resp.Progress())
-
-// 		case <-resp.Done:
-// 			// download is complete
-// 			break Loop
-// 		}
-// 	}
-
-// 	// check for errors
-// 	if err := resp.Err(); err != nil {
-// 		fmt.Fprintf(os.Stderr, "Download failed: %v\n", err)
-// 		os.Exit(1)
-// 	}
-
-// 	fmt.Printf("Download saved to ./%v \n", resp.Filename)
-
-// 	fmt.Println("Download complete.")

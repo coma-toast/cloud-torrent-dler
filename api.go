@@ -108,6 +108,7 @@ func (s *SeedrAPI) Get(file string, destination string) error {
 	// isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi)$", file.Name)
 	// if isAVideo {
 	fmt.Printf("Downloading file: %s\n", file)
+
 	for id, name := range s.folderMapping {
 		if name == file {
 			downloadID = id
@@ -116,7 +117,7 @@ func (s *SeedrAPI) Get(file string, destination string) error {
 	}
 	if downloadID != 0 {
 		fmt.Printf("DownloadFileByID(%d), file: %s\n", downloadID, file)
-		path := fmt.Sprintf("%s/%s\n", destination, file)
+		path := fmt.Sprintf("%s/%s", destination, file)
 		err = s.client.DownloadFileByID(downloadID, path)
 		if err != nil {
 			return err
@@ -143,23 +144,3 @@ func (s *SeedrAPI) Add(magnet string) error {
 }
 
 // TODO: make sure we download the longest file name - folders may be named the same, or there may be duplicates
-// var fileNameLength = 0
-// fmt.Println("Length", fileNameLength, name, id)
-// if len(name) > fileNameLength {
-// 	fileNameLength = len(name)
-// 	downloadID = id
-// }
-// fmt.Println("Length2", fileNameLength, name, id)
-
-// func deleteDownloaded(list []int) error {
-// 	var err error
-// 	for _, folder := range list {
-// 		deleteResult, err := apiCall("DELETE", folder, "folder")
-// 		if err != nil {
-// 			fmt.Println(fmt.Errorf("Error: %s", err))
-// 		}
-// 		spew.Dump("here", deleteResult)
-// 	}
-
-// 	return err
-// }

@@ -60,7 +60,8 @@ func (c *Client) call(method string, url string, payload interface{}, target int
 			postData = fmt.Sprintf("------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"magnet\"\r\n\r\n%s\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--", payload)
 		}
 	}
-	fmt.Println("jsonData in client.go", len(jsonData))
+	// fmt.Println("jsonData in client.go", len(jsonData))
+	_ = jsonData
 	request, err := http.NewRequest(method, url, strings.NewReader(postData))
 	request.Header.Set("Authorization", "Basic "+c.credentials)
 	request.Header.Add("content-type", "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW")
