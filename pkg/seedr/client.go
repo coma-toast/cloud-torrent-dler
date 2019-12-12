@@ -78,7 +78,7 @@ func (c *Client) call(method string, url string, payload interface{}, target int
 	defer resp.Body.Close()
 
 	responseBody, err := ioutil.ReadAll(resp.Body)
-	spew.Dump("client.go responseBody:", responseBody)
+	// spew.Dump("client.go responseBody:", responseBody)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -108,12 +108,18 @@ func (c *Client) call(method string, url string, payload interface{}, target int
 		err := fmt.Errorf("Seedr HTTP Error: %d", resp.StatusCode)
 		return responseBody, err
 	}
-	if target != nil && reflect.TypeOf(target).String() != "os.File" {
-		err = json.Unmarshal(responseBody, target)
-		if err != nil {
-			fmt.Println("here")
-			return responseBody, err
+
+	// if target is a string, assume it's a file path
+	if target != nil {
+		if reflect.TypeOf(target).String() != "*os.File" {
+			err = json.Unmarshal(responseBody, target)
+			if err != nil {
+				return responseBody, err
+			}
+		} else {
+			spew.Dump(target)
 		}
+
 	}
 
 	return responseBody, nil
