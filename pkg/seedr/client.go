@@ -85,25 +85,28 @@ func (c *Client) call(method string, url string, payload interface{}, target int
 	}
 	//TODO: this can all be one error function, take responseBody and do all the error checks
 	errorTarget := Error{}
+	_ = errorTarget
 
-	if resp.Header.Get("Content-Type") == "application/octet-stream" {
-		fileTarget, _ := target.(os.File)
-		err = writeFile(resp, &fileTarget)
-		if err != nil {
-			return responseBody, err
-		}
+	// if resp.Header.Get("Content-Type") == "application/octet-stream" {
+	// 	fmt.Println("application/octet - line 90 in client.go")
+	// 	fileTarget, _ := target.(os.File)
+	// 	err = writeFile(resp, &fileTarget)
+	// 	if err != nil {
+	// 		return responseBody, err
+	// 	}
 
-	} else {
-		err = json.Unmarshal(responseBody, &errorTarget)
-		if err != nil {
-			return responseBody, err
-		}
+	// } else {
+	// 	fmt.Println("NOT application/octet - line 98 in client.go (json.Unmarshal)")
+	// 	err = json.Unmarshal(responseBody, &errorTarget)
+	// 	if err != nil {
+	// 		return responseBody, err
+	// 	}
 
-		if errorTarget.ErrorText != "" {
-			errorTarget.CallResponse = resp
-			return responseBody, errorTarget
-		}
-	}
+	// 	if errorTarget.ErrorText != "" {
+	// 		errorTarget.CallResponse = resp
+	// 		return responseBody, errorTarget
+	// 	}
+	// }
 	// TODO: ^ to here
 	if resp.StatusCode >= 400 {
 		err := fmt.Errorf("Seedr HTTP Error: %d", resp.StatusCode)
@@ -112,13 +115,23 @@ func (c *Client) call(method string, url string, payload interface{}, target int
 
 	// if target is a string, assume it's a file path
 	if target != nil {
-		if reflect.TypeOf(target).String() != "*os.File" {
+		spew.Dump(target)
+		spew.Dump(reflect.TypeOf(target))
+		if reflect.TypeOf(target).String() != "**os.File" {
+			fmt.Println("jsonUnmarshal in client.go 119")
 			err = json.Unmarshal(responseBody, target)
 			if err != nil {
 				return responseBody, err
 			}
-		} else {
-			spew.Dump(target)
+		}
+
+		if reflect.TypeOf(target).String() == "**os.File" {
+			fmt.Println("writeFile in client.go 127")
+			fileTarget := target.(*os.File)
+			err = writeFile(resp, fileTarget)
+			if err != nil {
+				return []byte{}, err
+			}
 		}
 
 	}
@@ -128,6 +141,7 @@ func (c *Client) call(method string, url string, payload interface{}, target int
 
 func writeFile(body *http.Response, target *os.File) error {
 	// TODO: read into file buffer
-	_, err := io.Copy(target, body.Body)
+	written, err := io.Copy(target, body.Body)
+	spew.Dump("Wrote some bytes", written)
 	return err
 }

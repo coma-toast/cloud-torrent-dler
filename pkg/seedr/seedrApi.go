@@ -50,8 +50,9 @@ func (c Client) DownloadFileByID(id int, destination string) error {
 		return err
 	}
 	defer output.Close()
+	defer output.Sync()
 
-	_, err = c.call("GET", url, nil, output)
+	_, err = c.call("GET", url, nil, &output)
 	if err != nil {
 		return err
 	}
