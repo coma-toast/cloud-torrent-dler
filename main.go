@@ -77,6 +77,10 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
+			// TODO: file exist checking;
+			// TODO: delete queue;
+			// TODO: delete;
+			os.Exit(4)
 
 			for _, file := range list {
 				// spew.Dump("FILE", file)
