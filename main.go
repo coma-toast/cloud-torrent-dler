@@ -33,8 +33,7 @@ type DownloadItem struct {
 // One cache to rule them all
 var cache = &Cache{}
 var dryRun = false
-
-// var downloadQueue = []DownloadItem{}
+var DeleteQueue = []DownloadItem{}
 
 func main() {
 	conf = getConf()
@@ -80,31 +79,42 @@ func main() {
 			// TODO: file exist checking;
 			// TODO: delete queue;
 			// TODO: delete;
-			os.Exit(4)
+			// os.Exit(4)
 
 			for _, file := range list {
 				// spew.Dump("FILE", file)
 				filePath := fmt.Sprintf("%s/%s", conf.DlRoot, file.Name)
 				spew.Dump(filePath)
-				_, err := os.Open(filePath)
-				spew.Dump(err)
-				if os.IsExist(err) {
-					spew.Dump("EXISTSSS")
-					fmt.Printf("file %s exists, skipping ", file.Name)
-				} else {
-					spew.Dump("NOT EXISTS")
-					err = selectedSeedr.Get(file.Name, conf.DlRoot)
-					if err != nil {
-						spew.Dump(err)
-						os.Exit(1)
+				_, err := os.Stat(filePath)
+				if err != nil {
+					if os.IsNotExist(err) {
+						err = selectedSeedr.Get(file.Name, conf.DlRoot)
+						if err != nil {
+							fmt.Println(err)
+						}
+
+						defer addToDeleteQueue(file)
+
 					}
 				}
+				fmt.Printf("file %s exists, skipping\n", file.Name)
 			}
 		}
 	}
 
 	// Waiting for a channel that never comes...
 	<-dontExit
+}
+
+func addToDeleteQueue(file DownloadItem) {
+	var deleteItem DownloadItem
+
+	deleteItem.ID = file.ID
+	deleteItem.Name = file.Name
+	deleteItem.FolderPath = file.Name
+
+	DeleteQueue = append(DeleteQueue, deleteItem)
+	fmt.Printf("Deleting %s\n", file.Name)
 }
 
 func checkNewEpisodes(selectedSeedr SeedrInstance) {

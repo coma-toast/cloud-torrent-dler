@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"regexp"
 
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/seedr"
 )
@@ -104,26 +105,28 @@ func (s *SeedrAPI) Get(file string, destination string) error {
 	var downloadID = 0
 
 	// * dev code
-	// isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", file)
+	isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", file)
 	// isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi)$", file.Name)
-	// if isAVideo {
-	fmt.Printf("Downloading file: %s\n", file)
+	if isAVideo {
+		fmt.Printf("Downloading file: %s\n", file)
 
-	for id, name := range s.folderMapping {
-		if name == file {
-			downloadID = id
-			fmt.Printf("ID for %s is %d\n", file, downloadID)
+		for id, name := range s.folderMapping {
+			if name == file {
+				downloadID = id
+				fmt.Printf("ID for %s is %d\n", file, downloadID)
+			}
+		}
+		if downloadID != 0 {
+			fmt.Printf("DownloadFileByID(%d), file: %s\n", downloadID, file)
+			path := fmt.Sprintf("%s/%s", destination, file)
+			err = s.client.DownloadFileByID(downloadID, path)
+			if err != nil {
+				return err
+			}
 		}
 	}
-	if downloadID != 0 {
-		fmt.Printf("DownloadFileByID(%d), file: %s\n", downloadID, file)
-		path := fmt.Sprintf("%s/%s", destination, file)
-		err = s.client.DownloadFileByID(downloadID, path)
-		if err != nil {
-			return err
-		}
-	}
 
+	fmt.Printf("File %s download complete", file)
 	return err
 }
 
