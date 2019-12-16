@@ -74,7 +74,6 @@ func main() {
 	for range time.NewTicker(time.Second * 5).C {
 		for _, downloadFolder := range conf.CompletedFolder {
 			list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
-			// spew.Dump(list)
 			if err != nil {
 				panic(err)
 			}

@@ -4,14 +4,9 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
-	"reflect"
 	"strings"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 // Client is the Seedr Client
@@ -46,22 +41,21 @@ func (c *Client) call(method string, url string, payload interface{}, target int
 		c.client = &http.Client{}
 	}
 	// TODO: throw error if >= than 400
-	var jsonData []byte
+	// var jsonData []byte
 	var err error
 	var postData string
 
 	if payload != nil {
-		jsonData, err = json.Marshal(payload)
-		if err != nil {
-			return []byte{}, err
-		}
+		// jsonData, err = json.Marshal(payload)
+		// if err != nil {
+		// 	return []byte{}, err
+		// }
 
 		if method == "POST" {
 			postData = fmt.Sprintf("------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"magnet\"\r\n\r\n%s\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--", payload)
 		}
 	}
 	// fmt.Println("jsonData in client.go", len(jsonData))
-	_ = jsonData
 	request, err := http.NewRequest(method, url, strings.NewReader(postData))
 	request.Header.Set("Authorization", "Basic "+c.credentials)
 	request.Header.Add("content-type", "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW")
@@ -85,63 +79,23 @@ func (c *Client) call(method string, url string, payload interface{}, target int
 	}
 	//TODO: this can all be one error function, take responseBody and do all the error checks
 	errorTarget := Error{}
-	_ = errorTarget
 
-	// if resp.Header.Get("Content-Type") == "application/octet-stream" {
-	// 	fmt.Println("application/octet - line 90 in client.go")
-	// 	fileTarget, _ := target.(os.File)
-	// 	err = writeFile(resp, &fileTarget)
-	// 	if err != nil {
-	// 		return responseBody, err
-	// 	}
+	if target != nil {
+		err = json.Unmarshal(responseBody, &target)
+		if err != nil {
+			return responseBody, err
+		}
+	}
 
-	// } else {
-	// 	fmt.Println("NOT application/octet - line 98 in client.go (json.Unmarshal)")
-	// 	err = json.Unmarshal(responseBody, &errorTarget)
-	// 	if err != nil {
-	// 		return responseBody, err
-	// 	}
-
-	// 	if errorTarget.ErrorText != "" {
-	// 		errorTarget.CallResponse = resp
-	// 		return responseBody, errorTarget
-	// 	}
-	// }
+	if errorTarget.ErrorText != "" {
+		errorTarget.CallResponse = resp
+		return responseBody, errorTarget
+	}
 	// TODO: ^ to here
 	if resp.StatusCode >= 400 {
 		err := fmt.Errorf("Seedr HTTP Error: %d", resp.StatusCode)
 		return responseBody, err
 	}
 
-	// if target is a string, assume it's a file path
-	if target != nil {
-		spew.Dump(target)
-		spew.Dump(reflect.TypeOf(target))
-		if reflect.TypeOf(target).String() != "**os.File" {
-			fmt.Println("jsonUnmarshal in client.go 119")
-			err = json.Unmarshal(responseBody, target)
-			if err != nil {
-				return responseBody, err
-			}
-		}
-
-		if reflect.TypeOf(target).String() == "**os.File" {
-			fmt.Println("writeFile in client.go 127")
-			fileTarget := target.(*os.File)
-			err = writeFile(resp, fileTarget)
-			if err != nil {
-				return []byte{}, err
-			}
-		}
-
-	}
-
 	return responseBody, nil
-}
-
-func writeFile(body *http.Response, target *os.File) error {
-	// TODO: read into file buffer
-	written, err := io.Copy(target, body.Body)
-	spew.Dump("Wrote some bytes", written)
-	return err
 }

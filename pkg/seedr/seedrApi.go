@@ -2,7 +2,7 @@ package seedr
 
 import (
 	"fmt"
-	"os"
+	"io/ioutil"
 
 	"github.com/davecgh/go-spew/spew"
 )
@@ -45,19 +45,22 @@ func (c Client) GetFile(id int) (File, error) {
 func (c Client) DownloadFileByID(id int, destination string) error {
 	var err error
 	url := fmt.Sprintf("/file/%d", id)
-	output, err := os.Create(destination)
-	if err != nil {
-		return err
-	}
-	defer output.Close()
-	defer output.Sync()
-
-	_, err = c.call("GET", url, nil, &output)
+	err = c.downloadFile(url, destination)
 	if err != nil {
 		return err
 	}
 
 	return err
+}
+
+func (c Client) downloadFile(url string, destination string) error {
+	var err error
+	responseBytes, err := c.call("GET", url, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(destination, responseBytes, 0644)
 }
 
 //AddMagnet adds a magnet link to Seedr to be downloaded
