@@ -37,7 +37,14 @@ func (s *SeedrAPI) List(path string) ([]os.FileInfo, error) {
 
 	folderID, err := s.getFolderIDFromPath(path)
 	if err != nil {
-		return []os.FileInfo{}, err
+		err = s.populateFolderMapping(0)
+		if err != nil {
+			return []os.FileInfo{}, err
+		}
+		folderID, err = s.getFolderIDFromPath(path)
+		if err != nil {
+			return []os.FileInfo{}, err
+		}
 	}
 
 	files, err := s.client.GetFolder(folderID)
@@ -64,6 +71,7 @@ func (s *SeedrAPI) getFolderIDFromPath(path string) (int, error) {
 			return id, err
 		}
 	}
+
 	err = fmt.Errorf("Path not found: %s", path)
 
 	return 0, err
@@ -126,7 +134,6 @@ func (s *SeedrAPI) Get(file string, destination string) error {
 		}
 	}
 
-	fmt.Printf("File %s download complete\n", file)
 	return err
 }
 

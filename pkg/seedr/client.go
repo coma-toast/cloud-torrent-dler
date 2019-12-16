@@ -41,26 +41,17 @@ func (c *Client) call(method string, url string, payload interface{}, target int
 		c.client = &http.Client{}
 	}
 	// TODO: throw error if >= than 400
-	// var jsonData []byte
 	var err error
 	var postData string
 
 	if payload != nil {
-		// jsonData, err = json.Marshal(payload)
-		// if err != nil {
-		// 	return []byte{}, err
-		// }
-
 		if method == "POST" {
 			postData = fmt.Sprintf("------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"magnet\"\r\n\r\n%s\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--", payload)
 		}
 	}
-	// fmt.Println("jsonData in client.go", len(jsonData))
 	request, err := http.NewRequest(method, url, strings.NewReader(postData))
 	request.Header.Set("Authorization", "Basic "+c.credentials)
 	request.Header.Add("content-type", "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW")
-	// request.Header.Add("Content-Type", "application/json")
-	// request, err := http.NewRequest(method, url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return []byte{}, err
 	}
@@ -73,7 +64,6 @@ func (c *Client) call(method string, url string, payload interface{}, target int
 	defer resp.Body.Close()
 
 	responseBody, err := ioutil.ReadAll(resp.Body)
-	// spew.Dump("client.go responseBody:", responseBody)
 	if err != nil {
 		return []byte{}, err
 	}

@@ -80,7 +80,6 @@ func main() {
 			// os.Exit(4)
 
 			for _, file := range list {
-				// fmt.Printf("File loop: %s\n", file.Name)
 				filePath := fmt.Sprintf("%s/%s", conf.DlRoot, file.Name)
 				_, err := os.Stat(filePath)
 				if err != nil {
@@ -94,7 +93,6 @@ func main() {
 
 					}
 				}
-				fmt.Printf("file %s exists, skipping\n", file.Name)
 			}
 		}
 	}
