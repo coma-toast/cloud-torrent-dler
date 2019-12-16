@@ -5,7 +5,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/pidcheck"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/showrss"
 )
@@ -76,15 +75,13 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			// TODO: file exist checking;
 			// TODO: delete queue;
 			// TODO: delete;
 			// os.Exit(4)
 
 			for _, file := range list {
-				// spew.Dump("FILE", file)
+				// fmt.Printf("File loop: %s\n", file.Name)
 				filePath := fmt.Sprintf("%s/%s", conf.DlRoot, file.Name)
-				spew.Dump(filePath)
 				_, err := os.Stat(filePath)
 				if err != nil {
 					if os.IsNotExist(err) {
