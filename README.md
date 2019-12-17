@@ -6,7 +6,7 @@ Auto-download from a cloud torrent provider (Seedr) and save in a folder (expose
 
 ### Pre-reqs
 
-- A paid Seedr account
+- A paid [Seedr.cc](https://www.seedr.cc/?r=211) account
   - No API or FTP access for free accounts :(
 - A ShowRSS.info account (Free! They survive on donations. So do I. Hint hint.)
 - Go v1.13+ installed
