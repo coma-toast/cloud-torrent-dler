@@ -1,15 +1,16 @@
-# Root of the local download folder
+# Root of the local download folder (probably your Plex TV Shows folder)
 DlRoot: "/path"
-# PID file temp file path
+# PID file temp file path (just a temp file - put it in $HOME?)
 PidFilePath: "/path"
-# Where should cache.json live?
-CachePath: ""
+# Where should cache.json live? (I use $HOME)
+CachePath: "/home/username"
 # Array of folders to monitor for completed downloads. Subfolders here will map to subfolders in DlRoot
+# NOTE: Multiple folders do no work in this pre-release version - only put 1 here for now
 CompletedFolder: ["Completed/Kids", "Completed/NotKids"]
 Username: "username"
 Passwd: "password"
 # URL to your ShowRSS.info feed
-ShowRSS: ""
-# How we control for which download method to use
+ShowRSS: "http://showrss.info/user/XXXXXXXX.rss?magnets=true&namespaces=true&name=null&quality=null&re=null"
+# How we control for which download method to use (API only verified for this version)
 UseAPI: true
 UseFTP: false
