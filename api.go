@@ -114,7 +114,7 @@ func (s *SeedrAPI) Get(file string, destination string) error {
 
 	// * dev code
 	// isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", file)
-	isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi)$", file)
+	isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", file)
 	if isAVideo {
 		fmt.Printf("Downloading file: %s\n", file)
 
