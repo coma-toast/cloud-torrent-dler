@@ -5,15 +5,17 @@ import (
 	"os"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/pidcheck"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/showrss"
 )
 
 // SeedrInstance is the instance
 type SeedrInstance interface {
-	List(path string) ([]os.FileInfo, error)
-	Get(file string, destination string) error
 	Add(magnet string) error
+	Get(file string, destination string) error
+	GetPath(ID int) (string, error)
+	List(path string) ([]os.FileInfo, error)
 }
 
 // Magnet is for magnet links and their ID
@@ -75,16 +77,18 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
+			spew.Dump("LIST: ", list)
 			// TODO: delete queue;
 			// TODO: delete;
-			// os.Exit(4)
 
 			for _, file := range list {
-				filePath := fmt.Sprintf("%s/%s", conf.DlRoot, file.Name)
-				_, err := os.Stat(filePath)
+				spew.Dump("FILE", file)
+				folderPath := fmt.Sprintf("%s/%s/", conf.DlRoot, downloadFolder)
+				fmt.Println("folderPath: " + folderPath)
+				_, err = os.Stat(folderPath)
 				if err != nil {
 					if os.IsNotExist(err) {
-						err = selectedSeedr.Get(file.Name, conf.DlRoot)
+						err = selectedSeedr.Get(file.Name, folderPath)
 						if err != nil {
 							fmt.Println(err)
 						}
@@ -161,6 +165,7 @@ func findAllToDownload(instance SeedrInstance, path string, ftp bool) ([]Downloa
 		var currentItem DownloadItem
 		currentItem.Name = file.Name()
 		currentItem.ID = 0
+
 		if ftp {
 			currentItem.FolderPath = path + "/" + file.Name()
 		} else {

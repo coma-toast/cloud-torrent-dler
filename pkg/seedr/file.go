@@ -18,6 +18,11 @@ type File struct {
 	ParentFolder   int
 }
 
+// FileID gets the ID of the file
+func (f File) FileID() int {
+	return f.ID
+}
+
 // Name returns the name of the file
 func (f File) Name() string {
 	return f.FileName

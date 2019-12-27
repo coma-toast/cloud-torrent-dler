@@ -63,6 +63,92 @@ func (s *SeedrAPI) List(path string) ([]os.FileInfo, error) {
 	return folderList, nil
 }
 
+// Get downloads the file name
+func (s *SeedrAPI) Get(file string, destination string) error {
+	var err error
+	var downloadID = 0
+
+	// * dev code
+	// isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", file)
+	isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", file)
+	if isAVideo {
+		fmt.Printf("Downloading file: %s\n", file)
+
+		for id, name := range s.folderMapping {
+			if name == file {
+				downloadID = id
+				fmt.Printf("ID for %s is %d\n", file, downloadID)
+			}
+		}
+		if downloadID != 0 {
+			fmt.Printf("DownloadFileByID(%d), file: %s\n", downloadID, file)
+			if err != nil {
+				return err
+			}
+			seedrPath, err := s.GetPath(downloadID)
+			if err != nil {
+				return err
+			}
+
+			path := fmt.Sprintf("%s/%s/%s", destination, seedrPath, file)
+
+			fmt.Println(path)
+			os.Exit(2)
+			// TODO: make subfolders. file.ParentFolder (int) -> getFolderFromID + path
+			err = s.client.DownloadFileByID(downloadID, path)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return err
+}
+
+// Add adds a magnet link
+func (s *SeedrAPI) Add(magnet string) error {
+	if s.client == nil {
+		s.client = &seedr.Client{
+			Username: s.Username,
+			Password: s.Password,
+		}
+	}
+	err := s.client.AddMagnet(magnet)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// TODO: make sure we download the longest file name - folders may be named the same, or there may be duplicates
+
+// GetPath returns the full path of the file in Seedr, for path replication locally
+func (s *SeedrAPI) GetPath(queryID int) (string, error) {
+	fmt.Println("queryID ", queryID)
+	var err error
+	if s.folderMapping == nil {
+		s.folderMapping = make(map[int]string)
+		err := s.populateFolderMapping(0)
+		if err != nil {
+			return "not found", err
+		}
+	}
+
+	for id, pathName := range s.folderMapping {
+		if id == queryID {
+			fmt.Println("match")
+			fmt.Println(pathName)
+			// spew.Dump(s.folderMapping)
+			return pathName, err
+		}
+	}
+
+	err = fmt.Errorf("ID not found: %d", queryID)
+
+	return "", err
+}
+
 func (s *SeedrAPI) getFolderIDFromPath(path string) (int, error) {
 	var err error
 
@@ -106,54 +192,3 @@ func (s *SeedrAPI) populateFolderMapping(ID int) error {
 
 	return nil
 }
-
-// Get downloads the file name
-func (s *SeedrAPI) Get(file string, destination string) error {
-	var err error
-	var downloadID = 0
-
-	// * dev code
-	// isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", file)
-	isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", file)
-	if isAVideo {
-		fmt.Printf("Downloading file: %s\n", file)
-
-		for id, name := range s.folderMapping {
-			if name == file {
-				downloadID = id
-				fmt.Printf("ID for %s is %d\n", file, downloadID)
-			}
-		}
-		if downloadID != 0 {
-			fmt.Printf("DownloadFileByID(%d), file: %s\n", downloadID, file)
-			fileObject, err := s.client.GetFile(downloadID)
-			parent, err := s.client.GetFolder(fileObject.ParentFolder)
-			path := fmt.Sprintf("%s/%s/%s", destination, parent.Name(), file)
-			// TODO: make subfolders. file.ParentFolder (int) -> getFolderFromID + path
-			err = s.client.DownloadFileByID(downloadID, path)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return err
-}
-
-// Add adds a magnet link
-func (s *SeedrAPI) Add(magnet string) error {
-	if s.client == nil {
-		s.client = &seedr.Client{
-			Username: s.Username,
-			Password: s.Password,
-		}
-	}
-	err := s.client.AddMagnet(magnet)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// TODO: make sure we download the longest file name - folders may be named the same, or there may be duplicates

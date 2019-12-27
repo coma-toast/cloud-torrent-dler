@@ -13,9 +13,10 @@ import (
 
 // SeedrFTP is the struct for FTP
 type SeedrFTP struct {
-	Username string
-	Password string
-	client   *goftp.Client
+	Username      string
+	Password      string
+	client        *goftp.Client
+	folderMapping map[int]string
 }
 
 // List gets a list of files or folders in a given path
@@ -78,4 +79,20 @@ func (s *SeedrFTP) Get(file string, destination string) error {
 func (s *SeedrFTP) Add(magnet string) error {
 	err := fmt.Errorf("No add function for FTP.")
 	return err
+}
+
+// TODO: folderMapping function for FTP
+// GetPath gets the file path
+func (s *SeedrFTP) GetPath(queryID int) (string, error) {
+	var err error
+
+	for id, pathName := range s.folderMapping {
+		if id == queryID {
+			return pathName, err
+		}
+	}
+
+	err = fmt.Errorf("ID not found: %d", queryID)
+
+	return "", err
 }
