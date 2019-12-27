@@ -126,7 +126,9 @@ func (s *SeedrAPI) Get(file string, destination string) error {
 		}
 		if downloadID != 0 {
 			fmt.Printf("DownloadFileByID(%d), file: %s\n", downloadID, file)
-			path := fmt.Sprintf("%s/%s", destination, file)
+			fileObject, err := s.client.GetFile(downloadID)
+			parent, err := s.client.GetFolder(fileObject.ParentFolder)
+			path := fmt.Sprintf("%s/%s/%s", destination, parent.Name(), file)
 			// TODO: make subfolders. file.ParentFolder (int) -> getFolderFromID + path
 			err = s.client.DownloadFileByID(downloadID, path)
 			if err != nil {
