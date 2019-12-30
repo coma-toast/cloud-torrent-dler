@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/seedr"
 )
 
@@ -67,7 +69,10 @@ func (s *SeedrAPI) List(path string) ([]os.FileInfo, error) {
 func (s *SeedrAPI) Get(file string, destination string) error {
 	var err error
 	var downloadID = 0
+	var folderLength = 0
 
+	spew.Dump(s.folderMapping)
+	// TODO: maybe change cache, to have the folder path and seedr file id instead of magnet
 	// * dev code
 	// isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", file)
 	isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", file)
@@ -75,9 +80,13 @@ func (s *SeedrAPI) Get(file string, destination string) error {
 		fmt.Printf("Downloading file: %s\n", file)
 
 		for id, name := range s.folderMapping {
-			if name == file {
-				downloadID = id
-				fmt.Printf("ID for %s is %d\n", file, downloadID)
+			if strings.Contains(file, name) {
+				fmt.Println("found", file, id, name, folderLength)
+				if len(name) > folderLength {
+					downloadID = id
+					folderLength = len(name)
+					fmt.Printf("ID for %s is %d\n", file, downloadID)
+				}
 			}
 		}
 		if downloadID != 0 {
@@ -86,6 +95,7 @@ func (s *SeedrAPI) Get(file string, destination string) error {
 				return err
 			}
 			seedrPath, err := s.GetPath(downloadID)
+			fmt.Println("seedrPath " + seedrPath)
 			if err != nil {
 				return err
 			}
@@ -135,18 +145,12 @@ func (s *SeedrAPI) GetPath(queryID int) (string, error) {
 		}
 	}
 
-	for id, pathName := range s.folderMapping {
-		if id == queryID {
-			fmt.Println("match")
-			fmt.Println(pathName)
-			// spew.Dump(s.folderMapping)
-			return pathName, err
-		}
+	pathName := s.folderMapping[queryID]
+	if len(pathName) == 0 {
+		err = fmt.Errorf("folder Path lookup error - queryID not found: %d", queryID)
 	}
 
-	err = fmt.Errorf("ID not found: %d", queryID)
-
-	return "", err
+	return pathName, err
 }
 
 func (s *SeedrAPI) getFolderIDFromPath(path string) (int, error) {
