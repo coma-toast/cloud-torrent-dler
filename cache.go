@@ -10,7 +10,7 @@ import (
 type Cache struct {
 	Name  string
 	path  string
-	state map[int]string
+	state map[string]DownloadItem
 	mutex *sync.Mutex
 }
 
@@ -18,7 +18,7 @@ type Cache struct {
 func (c *Cache) Initialize(path string) error {
 	c.mutex = &sync.Mutex{}
 	c.path = path
-	cache.state = make(map[int]string)
+	cache.state = make(map[string]DownloadItem)
 	err := jsonIo.ReadFile(path, &cache.state)
 	if err != nil {
 		return err
@@ -28,7 +28,7 @@ func (c *Cache) Initialize(path string) error {
 }
 
 // Set sets the cache
-func (c *Cache) Set(key int, value string) error {
+func (c *Cache) Set(key string, value DownloadItem) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.state[key] = value
@@ -40,8 +40,15 @@ func (c *Cache) Set(key int, value string) error {
 	return nil
 }
 
+// Get retrieves data from the cache
+func (c *Cache) Get(key string) DownloadItem {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	return c.state[key]
+}
+
 // IsSet determines if the item exists already
-func (c *Cache) IsSet(key int) bool {
+func (c *Cache) IsSet(key string) bool {
 	_, ok := c.state[key]
 
 	return ok

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
@@ -22,11 +23,14 @@ type SeedrInstance interface {
 type Magnet struct {
 	ID   int
 	link string
+	name string
 }
 
 // DownloadItem is the information needed for the download queue
 type DownloadItem struct {
-	ID         int
+	EpisodeID  int
+	ShowID     int
+	SeedrID    int
 	Name       string
 	FolderPath string
 }
@@ -71,15 +75,14 @@ func main() {
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 
 	// downloadWorker()
-	for range time.NewTicker(time.Second * 5).C {
+	for range time.NewTicker(time.Second * 10).C {
 		for _, downloadFolder := range conf.CompletedFolder {
 			list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
 			if err != nil {
 				panic(err)
 			}
-			spew.Dump("LIST: ", list)
-			// TODO: delete queue;
-			// TODO: delete;
+
+			setCacheSeedrInfo()
 
 			for _, file := range list {
 				spew.Dump("FILE", file)
@@ -93,7 +96,7 @@ func main() {
 							fmt.Println(err)
 						}
 
-						defer addToDeleteQueue(file)
+						// defer addToDeleteQueue(file)
 
 					}
 				}
@@ -105,16 +108,23 @@ func main() {
 	<-dontExit
 }
 
-func addToDeleteQueue(file DownloadItem) {
-	var deleteItem DownloadItem
+func setCacheSeedrInfo() {
+	// getCacheInfo
+	// getSeedrIdForFile
+	// setCacheItem
 
-	deleteItem.ID = file.ID
-	deleteItem.Name = file.Name
-	deleteItem.FolderPath = file.Name
-
-	DeleteQueue = append(DeleteQueue, deleteItem)
-	fmt.Printf("Deleting %s\n", file.Name)
 }
+
+// func addToDeleteQueue(file DownloadItem) {
+// 	var deleteItem int
+
+// 	deleteItem.SeerID = file.SeedrID
+// 	deleteItem.Name = file.Name
+// 	deleteItem.FolderPath = file.Name
+
+// 	DeleteQueue = append(DeleteQueue, deleteItem)
+// 	fmt.Printf("Deleting %s\n", file.Name)
+// }
 
 func checkNewEpisodes(selectedSeedr SeedrInstance) {
 	initializeMagnetList, err := getNewEpisodes(conf.ShowRSS)
@@ -122,8 +132,21 @@ func checkNewEpisodes(selectedSeedr SeedrInstance) {
 		fmt.Println(err)
 		return
 	}
+
+	allShows, err := showrss.GetShows(conf.ShowRSS)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	for _, magnet := range initializeMagnetList {
-		err := AddMagnet(selectedSeedr, magnet)
+		showID, err := getShowIDFromEpisodeID(magnet.ID, allShows)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+
+		err = AddMagnet(selectedSeedr, magnet, showID)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -132,20 +155,53 @@ func checkNewEpisodes(selectedSeedr SeedrInstance) {
 	dryRun = false
 }
 
+// getShowIDFromEpisodeID does exactly that
+func getShowIDFromEpisodeID(episode int, allShows showrss.Shows) (int, error) {
+	for _, item := range allShows.Item {
+		if item.TVEpisodeID == episode {
+			return item.TVShowID, nil
+		}
+	}
+	err := fmt.Errorf("unable to find ShowID for EpisodeID: %d", episode)
+
+	return 0, err
+}
+
 // AddMagnet adds a magnet link to Seedr for downloading
-func AddMagnet(instance SeedrInstance, data Magnet) error {
-	if cache.IsSet(data.ID) {
+func AddMagnet(instance SeedrInstance, data Magnet, showID int) error {
+	if cache.IsSet(data.name) {
 		return nil
 	}
+
 	if !dryRun {
-		fmt.Printf("Adding magnet for episode: %d\n", data.ID)
+		fmt.Printf("Adding magnet for episode: %s\n", data.name)
 		err := instance.Add(data.link)
 		if err != nil {
 			return err
 		}
 	}
 
-	err := cache.Set(data.ID, data.link)
+	itemData := DownloadItem{
+		EpisodeID:  data.ID,
+		ShowID:     showID,
+		SeedrID:    0,
+		Name:       data.name,
+		FolderPath: "",
+	}
+
+	magnetParts := strings.Split(data.link, "&")
+	for _, part := range magnetParts {
+		if strings.Contains(part, "dn=") {
+			part = strings.TrimPrefix(part, "dn=")
+			part = strings.ReplaceAll(part, "+", " ")
+			itemData.Name = part
+			fmt.Println(part)
+		}
+	}
+	spew.Dump(itemData)
+	// os.Exit(7)
+
+	err := cache.Set(data.name, itemData)
 	if err != nil {
 		return err
 	}
@@ -164,7 +220,7 @@ func findAllToDownload(instance SeedrInstance, path string, ftp bool) ([]Downloa
 	for _, file := range files {
 		var currentItem DownloadItem
 		currentItem.Name = file.Name()
-		currentItem.ID = 0
+		currentItem.SeedrID = 0
 
 		if ftp {
 			currentItem.FolderPath = path + "/" + file.Name()
@@ -191,14 +247,15 @@ func findAllToDownload(instance SeedrInstance, path string, ftp bool) ([]Downloa
 // getNewEpisodes is a loop to look for new shows added to the RSS feed to then add to the download queue
 func getNewEpisodes(url string) ([]Magnet, error) {
 	returnData := []Magnet{}
-	episodes, err := showrss.GetAllEpisodeLinks(url)
+	episodes, err := showrss.GetAllEpisodeItems(url)
 	if err != nil {
 		return nil, err
 	}
-	for episodeID, magnetLink := range episodes {
+	for _, item := range episodes {
 		returnData = append(returnData, Magnet{
-			ID:   episodeID,
-			link: magnetLink,
+			ID:   item.ItemTVEpisodeID(),
+			link: item.ItemLink(),
+			name: item.ItemTitle(),
 		})
 	}
 

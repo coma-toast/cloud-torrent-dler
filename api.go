@@ -30,7 +30,7 @@ func (s *SeedrAPI) List(path string) ([]os.FileInfo, error) {
 
 	if s.folderMapping == nil {
 		s.folderMapping = make(map[int]string)
-		err := s.populateFolderMapping(0)
+		err := s.populateFolderMapping(0, "")
 		// err := s.populateFolderMapping(23577)
 		if err != nil {
 			return []os.FileInfo{}, err
@@ -39,7 +39,7 @@ func (s *SeedrAPI) List(path string) ([]os.FileInfo, error) {
 
 	folderID, err := s.getFolderIDFromPath(path)
 	if err != nil {
-		err = s.populateFolderMapping(0)
+		err = s.populateFolderMapping(0, "")
 		if err != nil {
 			return []os.FileInfo{}, err
 		}
@@ -71,8 +71,13 @@ func (s *SeedrAPI) Get(file string, destination string) error {
 	var downloadID = 0
 	var folderLength = 0
 
+	// TODO: figure out why the folderMapping is incorrect if you don't run this again
+	err = s.populateFolderMapping(0, "")
+	if err != nil {
+		return err
+	}
 	spew.Dump(s.folderMapping)
-	// TODO: maybe change cache, to have the folder path and seedr file id instead of magnet
+
 	// * dev code
 	// isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", file)
 	isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", file)
@@ -80,7 +85,7 @@ func (s *SeedrAPI) Get(file string, destination string) error {
 		fmt.Printf("Downloading file: %s\n", file)
 
 		for id, name := range s.folderMapping {
-			if strings.Contains(file, name) {
+			if strings.Contains(name, file) {
 				fmt.Println("found", file, id, name, folderLength)
 				if len(name) > folderLength {
 					downloadID = id
@@ -139,7 +144,7 @@ func (s *SeedrAPI) GetPath(queryID int) (string, error) {
 	var err error
 	if s.folderMapping == nil {
 		s.folderMapping = make(map[int]string)
-		err := s.populateFolderMapping(0)
+		err := s.populateFolderMapping(0, "")
 		if err != nil {
 			return "not found", err
 		}
@@ -167,19 +172,24 @@ func (s *SeedrAPI) getFolderIDFromPath(path string) (int, error) {
 	return 0, err
 }
 
-func (s *SeedrAPI) populateFolderMapping(ID int) error {
+func (s *SeedrAPI) populateFolderMapping(ID int, path string) error {
 	folder, err := s.client.GetFolder(ID)
+
 	if err != nil {
 		return err
 	}
 
 	if _, ok := s.folderMapping[folder.ID]; !ok {
-		s.folderMapping[folder.ID] = folder.FolderName
+		if ID == 0 {
+			s.folderMapping[folder.ID] = folder.FolderName
+		} else {
+			s.folderMapping[folder.ID] = path + folder.FolderName
+		}
 	}
 
 	if len(folder.Folders) > 0 {
 		for _, subfolder := range folder.Folders {
-			err := s.populateFolderMapping(subfolder.ID)
+			err := s.populateFolderMapping(subfolder.ID, "")
 			if err != nil {
 				return err
 			}
@@ -188,9 +198,7 @@ func (s *SeedrAPI) populateFolderMapping(ID int) error {
 
 	if len(folder.Files) > 0 {
 		for _, file := range folder.Files {
-			if _, ok := s.folderMapping[file.ID]; !ok {
-				s.folderMapping[file.ID] = fmt.Sprintf("%s/%s", folder.Name(), file.FileName)
-			}
+			s.folderMapping[file.ID] = folder.FolderName + "/" + file.FileName
 		}
 	}
 

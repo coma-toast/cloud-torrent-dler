@@ -24,7 +24,7 @@ func GetShows(url string) (Shows, error) {
 	return result.Shows, nil
 }
 
-// GetAllEpisodeLinks is a loop to look for new shows added to the RSS feed to then add to the download queue
+// GetAllEpisodeLinks looks for new shows added to the RSS feed and returns the EpisodeID and magnet link
 func GetAllEpisodeLinks(url string) (map[int]string, error) {
 	initState, err := GetShows(url)
 	if err != nil {
@@ -35,6 +35,15 @@ func GetAllEpisodeLinks(url string) (map[int]string, error) {
 		returnData[item.TVEpisodeID] = item.Link
 	}
 	return returnData, nil
+}
+
+// GetAllEpisodeItems gets all episodes in Item format
+func GetAllEpisodeItems(url string) ([]Item, error) {
+	shows, err := GetShows(url)
+	if err != nil {
+		return nil, err
+	}
+	return shows.Item, nil
 }
 
 func getXML(url string) ([]byte, error) {
