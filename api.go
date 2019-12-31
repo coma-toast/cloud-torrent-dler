@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
 
 	"github.com/davecgh/go-spew/spew"
@@ -80,40 +79,38 @@ func (s *SeedrAPI) Get(file string, destination string) error {
 
 	// * dev code
 	// isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", file)
-	isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", file)
-	if isAVideo {
-		fmt.Printf("Downloading file: %s\n", file)
 
-		for id, name := range s.folderMapping {
-			if strings.Contains(name, file) {
-				fmt.Println("found", file, id, name, folderLength)
-				if len(name) > folderLength {
-					downloadID = id
-					folderLength = len(name)
-					fmt.Printf("ID for %s is %d\n", file, downloadID)
-				}
+	fmt.Printf("Downloading file: %s\n", file)
+
+	for id, name := range s.folderMapping {
+		if strings.Contains(name, file) {
+			fmt.Println("found", file, id, name, folderLength)
+			if len(name) > folderLength {
+				downloadID = id
+				folderLength = len(name)
+				fmt.Printf("ID for %s is %d\n", file, downloadID)
 			}
 		}
-		if downloadID != 0 {
-			fmt.Printf("DownloadFileByID(%d), file: %s\n", downloadID, file)
-			if err != nil {
-				return err
-			}
-			seedrPath, err := s.GetPath(downloadID)
-			fmt.Println("seedrPath " + seedrPath)
-			if err != nil {
-				return err
-			}
+	}
+	if downloadID != 0 {
+		fmt.Printf("DownloadFileByID(%d), file: %s\n", downloadID, file)
+		if err != nil {
+			return err
+		}
+		seedrPath, err := s.GetPath(downloadID)
+		fmt.Println("seedrPath " + seedrPath)
+		if err != nil {
+			return err
+		}
 
-			path := fmt.Sprintf("%s/%s/%s", destination, seedrPath, file)
+		path := fmt.Sprintf("%s/%s/%s", destination, seedrPath, file)
 
-			fmt.Println(path)
-			os.Exit(2)
-			// TODO: make subfolders. file.ParentFolder (int) -> getFolderFromID + path
-			err = s.client.DownloadFileByID(downloadID, path)
-			if err != nil {
-				return err
-			}
+		fmt.Println(path)
+		os.Exit(2)
+		// TODO: make subfolders. file.ParentFolder (int) -> getFolderFromID + path
+		err = s.client.DownloadFileByID(downloadID, path)
+		if err != nil {
+			return err
 		}
 	}
 

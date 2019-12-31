@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -81,23 +82,27 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-
-			setCacheSeedrInfo()
+			spew.Dump(list)
+			os.Exit(1)
 
 			for _, file := range list {
-				spew.Dump("FILE", file)
-				folderPath := fmt.Sprintf("%s/%s/", conf.DlRoot, downloadFolder)
-				fmt.Println("folderPath: " + folderPath)
-				_, err = os.Stat(folderPath)
-				if err != nil {
-					if os.IsNotExist(err) {
-						err = selectedSeedr.Get(file.Name, folderPath)
-						if err != nil {
-							fmt.Println(err)
+				isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", file.Name)
+				if isAVideo {
+					setCacheSeedrInfo(file.Name)
+					spew.Dump("FILE", file)
+					folderPath := fmt.Sprintf("%s/%s/", conf.DlRoot, downloadFolder)
+					fmt.Println("folderPath: " + folderPath)
+					_, err = os.Stat(folderPath)
+					if err != nil {
+						if os.IsNotExist(err) {
+							err = selectedSeedr.Get(file.Name, folderPath)
+							if err != nil {
+								fmt.Println(err)
+							}
+
+							// defer addToDeleteQueue(file)
+
 						}
-
-						// defer addToDeleteQueue(file)
-
 					}
 				}
 			}
@@ -108,8 +113,9 @@ func main() {
 	<-dontExit
 }
 
-func setCacheSeedrInfo() {
-	// getCacheInfo
+func setCacheSeedrInfo(filename string) {
+	folderName := string(filename[len(filename)-4:])
+	data := cache.Get(folderName)
 	// getSeedrIdForFile
 	// setCacheItem
 
