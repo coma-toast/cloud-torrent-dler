@@ -90,7 +90,7 @@ func main() {
 				isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", file.Name)
 				if isAVideo {
 					// file.Name = sanitizeText(file.Name)
-					setCacheSeedrInfo(selectedSeedr, file.Name)
+					setCacheSeedrInfo(selectedSeedr, downloadFolder, file.Name)
 					// spew.Dump("FILE", file)
 					// folderPath := fmt.Sprintf("%s/%s/", conf.DlRoot, downloadFolder)
 					// fmt.Println("folderPath: " + folderPath)
@@ -115,7 +115,7 @@ func main() {
 	<-dontExit
 }
 
-func setCacheSeedrInfo(selectedSeedr SeedrInstance, filename string) error {
+func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, filename string) error {
 	folderName := string(filename[0 : len(filename)-4])
 	if !cache.IsSet(folderName) {
 		folderName = sanitizeText(folderName)
@@ -127,6 +127,8 @@ func setCacheSeedrInfo(selectedSeedr SeedrInstance, filename string) error {
 
 		folderItem.SeedrID = id
 		folderItem.Name = filename
+		// TODO: subfolder (Movies/Not Kids)
+		folderItem.FolderPath = fmt.Sprintf("%s/%s", downloadFolder, folderName)
 		err = cache.Set(folderName, folderItem)
 		if err != nil {
 			return err
