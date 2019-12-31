@@ -5,7 +5,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/seedr"
 )
 
@@ -75,7 +74,7 @@ func (s *SeedrAPI) Get(file string, destination string) error {
 	if err != nil {
 		return err
 	}
-	spew.Dump(s.folderMapping)
+	// spew.Dump(s.folderMapping)
 
 	// * dev code
 	// isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", file)
@@ -117,6 +116,7 @@ func (s *SeedrAPI) Get(file string, destination string) error {
 	return err
 }
 
+// FindID gets the SeedrID for a file
 func (s *SeedrAPI) FindID(filename string) (int, error) {
 	s.populateFolderMapping(0, "")
 	for id, name := range s.folderMapping {

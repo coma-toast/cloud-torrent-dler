@@ -3,7 +3,7 @@ DlRoot: "/path"
 # PID file temp file path (just a temp file - put it in $HOME?)
 PidFilePath: "/path"
 # Where should cache.json live? (I use $HOME)
-CachePath: "/home/username"
+CachePath: "/home/username/cache.json"
 # Array of folders to monitor for completed downloads. Subfolders here will map to subfolders in DlRoot
 # NOTE: Multiple folders do no work in this pre-release version - only put 1 here for now
 CompletedFolder: ["Completed/Kids", "Completed/NotKids"]

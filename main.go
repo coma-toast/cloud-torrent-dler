@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kennygrant/sanitize"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/pidcheck"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/showrss"
 )
@@ -78,6 +79,7 @@ func main() {
 
 	// downloadWorker()
 	for range time.NewTicker(time.Second * 10).C {
+		fmt.Println("Tick...")
 		for _, downloadFolder := range conf.CompletedFolder {
 			list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
 			if err != nil {
@@ -87,22 +89,23 @@ func main() {
 			for _, file := range list {
 				isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", file.Name)
 				if isAVideo {
+					// file.Name = sanitizeText(file.Name)
 					setCacheSeedrInfo(selectedSeedr, file.Name)
-					spew.Dump("FILE", file)
-					folderPath := fmt.Sprintf("%s/%s/", conf.DlRoot, downloadFolder)
-					fmt.Println("folderPath: " + folderPath)
-					_, err = os.Stat(folderPath)
-					if err != nil {
-						if os.IsNotExist(err) {
-							err = selectedSeedr.Get(file.Name, folderPath)
-							if err != nil {
-								fmt.Println(err)
-							}
+					// spew.Dump("FILE", file)
+					// folderPath := fmt.Sprintf("%s/%s/", conf.DlRoot, downloadFolder)
+					// fmt.Println("folderPath: " + folderPath)
+					// _, err = os.Stat(folderPath)
+					// if err != nil {
+					// 	if os.IsNotExist(err) {
+					// 		err = selectedSeedr.Get(file.Name, folderPath)
+					// 		if err != nil {
+					// 			fmt.Println(err)
+					// 		}
 
-							// defer addToDeleteQueue(file)
+					// 		// defer addToDeleteQueue(file)
 
-						}
-					}
+					// 	}
+					// }
 				}
 			}
 		}
@@ -113,18 +116,33 @@ func main() {
 }
 
 func setCacheSeedrInfo(selectedSeedr SeedrInstance, filename string) error {
-	folderName := string(filename[len(filename)-4:])
-	folderItem := cache.Get(folderName)
-	fmt.Println("folderName", folderName)
-	id, err := selectedSeedr.FindID(filename)
-	if err != nil {
-		return err
-	}
-	spew.Dump(folderItem, id)
-	os.Exit(1)
+	folderName := string(filename[0 : len(filename)-4])
+	if !cache.IsSet(folderName) {
+		folderName = sanitizeText(folderName)
+		folderItem := cache.Get(folderName)
+		id, err := selectedSeedr.FindID(filename)
+		if err != nil {
+			return err
+		}
 
-	// setCacheItem
+		folderItem.SeedrID = id
+		folderItem.Name = filename
+		err = cache.Set(folderName, folderItem)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+func sanitizeText(input string) string {
+	extension := input[len(input)-4:]
+	output := sanitize.BaseName(input[0 : len(input)-4])
+	output = strings.ReplaceAll(output, "-", " ")
+	output = output + extension
+
+	return output
 }
 
 // func addToDeleteQueue(file DownloadItem) {
