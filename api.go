@@ -35,6 +35,8 @@ func (s *SeedrAPI) List(path string) ([]os.FileInfo, error) {
 			return []os.FileInfo{}, err
 		}
 	}
+	spew.Dump(s.folderMapping)
+	os.Exit(9)
 
 	folderID, err := s.getFolderIDFromPath(path)
 	if err != nil {
@@ -115,6 +117,17 @@ func (s *SeedrAPI) Get(file string, destination string) error {
 	}
 
 	return err
+}
+
+func (s *SeedrAPI) FindID(filename string) (int, error) {
+	s.populateFolderMapping(0, "")
+	for id, name := range s.folderMapping {
+		if strings.Contains(name, filename) {
+			return id, nil
+		}
+	}
+
+	return 0, fmt.Errorf("filename not found")
 }
 
 // Add adds a magnet link

@@ -17,6 +17,7 @@ type SeedrInstance interface {
 	Add(magnet string) error
 	Get(file string, destination string) error
 	GetPath(ID int) (string, error)
+	FindID(filename string) (int, error)
 	List(path string) ([]os.FileInfo, error)
 }
 
@@ -88,7 +89,7 @@ func main() {
 			for _, file := range list {
 				isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", file.Name)
 				if isAVideo {
-					setCacheSeedrInfo(file.Name)
+					setCacheSeedrInfo(selectedSeedr, file.Name)
 					spew.Dump("FILE", file)
 					folderPath := fmt.Sprintf("%s/%s/", conf.DlRoot, downloadFolder)
 					fmt.Println("folderPath: " + folderPath)
@@ -113,12 +114,17 @@ func main() {
 	<-dontExit
 }
 
-func setCacheSeedrInfo(filename string) {
+func setCacheSeedrInfo(selectedSeedr SeedrInstance, filename string) error {
 	folderName := string(filename[len(filename)-4:])
-	data := cache.Get(folderName)
-	// getSeedrIdForFile
-	// setCacheItem
+	folderItem := cache.Get(folderName)
+	id, err := selectedSeedr.FindID(filename)
+	if err != nil {
+		return err
+	}
+	fmt.Println(folderItem, id)
 
+	// setCacheItem
+	return nil
 }
 
 // func addToDeleteQueue(file DownloadItem) {

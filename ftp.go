@@ -81,6 +81,12 @@ func (s *SeedrFTP) Add(magnet string) error {
 	return err
 }
 
+// FindID is unsupported
+func (s *SeedrFTP) FindID(filename string) (int, error) {
+	err := fmt.Errorf("Finding Seedr ID does not work on FTP")
+	return 0, err
+}
+
 // TODO: folderMapping function for FTP
 // GetPath gets the file path
 func (s *SeedrFTP) GetPath(queryID int) (string, error) {
