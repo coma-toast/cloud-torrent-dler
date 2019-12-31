@@ -3,6 +3,7 @@ package main
 import (
 	"sync"
 
+	"github.com/davecgh/go-spew/spew"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/jsonIo"
 )
 
@@ -44,6 +45,7 @@ func (c *Cache) Set(key string, value DownloadItem) error {
 func (c *Cache) Get(key string) DownloadItem {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
+	spew.Dump(c.state)
 	return c.state[key]
 }
 

@@ -83,8 +83,6 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			spew.Dump(list)
-			os.Exit(1)
 
 			for _, file := range list {
 				isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", file.Name)
@@ -117,11 +115,13 @@ func main() {
 func setCacheSeedrInfo(selectedSeedr SeedrInstance, filename string) error {
 	folderName := string(filename[len(filename)-4:])
 	folderItem := cache.Get(folderName)
+	fmt.Println("folderName", folderName)
 	id, err := selectedSeedr.FindID(filename)
 	if err != nil {
 		return err
 	}
-	fmt.Println(folderItem, id)
+	spew.Dump(folderItem, id)
+	os.Exit(1)
 
 	// setCacheItem
 	return nil

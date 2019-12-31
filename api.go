@@ -35,8 +35,6 @@ func (s *SeedrAPI) List(path string) ([]os.FileInfo, error) {
 			return []os.FileInfo{}, err
 		}
 	}
-	spew.Dump(s.folderMapping)
-	os.Exit(9)
 
 	folderID, err := s.getFolderIDFromPath(path)
 	if err != nil {
