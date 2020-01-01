@@ -127,7 +127,6 @@ func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, filen
 
 		folderItem.SeedrID = id
 		folderItem.Name = filename
-		// TODO: subfolder (Movies/Not Kids)
 		folderItem.FolderPath = fmt.Sprintf("%s/%s", downloadFolder, folderName)
 		err = cache.Set(folderName, folderItem)
 		if err != nil {
@@ -139,10 +138,14 @@ func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, filen
 }
 
 func sanitizeText(input string) string {
-	extension := input[len(input)-4:]
-	output := sanitize.BaseName(input[0 : len(input)-4])
+	var extension string
+	extension = input[len(input)-4:]
+	output := sanitize.BaseName(input)
 	output = strings.ReplaceAll(output, "-", " ")
-	output = output + extension
+	isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", input)
+	if isAVideo {
+		output = output + extension
+	}
 
 	return output
 }
