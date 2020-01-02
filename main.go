@@ -73,6 +73,7 @@ func main() {
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 
 	// downloadWorker()
+	// for range time.NewTicker(time.Second * 5).C {
 	for range time.NewTicker(time.Minute * 5).C {
 		for _, downloadFolder := range conf.CompletedFolder {
 			list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
@@ -81,10 +82,11 @@ func main() {
 			}
 
 			for _, item := range list {
+				// isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", item.Name)
 				isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", item.Name)
 				if isAVideo {
 					setCacheSeedrInfo(selectedSeedr, downloadFolder, &item)
-					localPath := fmt.Sprintf("%s/%s", conf.DlRoot, item.FolderPath)
+					localPath := fmt.Sprintf("%s/%s/", conf.DlRoot, item.FolderPath)
 					_, err = os.Stat(localPath + item.Name)
 					if err != nil {
 						if os.IsNotExist(err) {
@@ -134,8 +136,8 @@ func sanitizeText(input string) string {
 	extension = input[len(input)-4:]
 	output := sanitize.BaseName(input)
 	output = strings.ReplaceAll(output, "-", " ")
-	isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", input)
-	if isAVideo {
+	hasExtension, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v|txt|jpg)$", input)
+	if hasExtension {
 		output = output + extension
 	}
 
