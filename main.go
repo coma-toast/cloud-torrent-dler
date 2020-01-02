@@ -65,7 +65,7 @@ func main() {
 	go func() {
 		checkNewEpisodes(selectedSeedr)
 		// ticker to control how often the loop runs
-		for range time.NewTicker(time.Minute * 5).C {
+		for range time.NewTicker(time.Minute * 1).C {
 			checkNewEpisodes(selectedSeedr)
 		}
 	}()
@@ -74,7 +74,7 @@ func main() {
 
 	// downloadWorker()
 	// for range time.NewTicker(time.Second * 5).C {
-	for range time.NewTicker(time.Minute * 5).C {
+	for range time.NewTicker(time.Minute * 1).C {
 		for _, downloadFolder := range conf.CompletedFolder {
 			list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
 			if err != nil {
