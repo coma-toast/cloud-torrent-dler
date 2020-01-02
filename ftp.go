@@ -41,7 +41,7 @@ func (s *SeedrFTP) List(path string) ([]os.FileInfo, error) {
 }
 
 // Get downloads the files in the provided array of files
-func (s *SeedrFTP) Get(file string, destination string) error {
+func (s *SeedrFTP) Get(file DownloadItem, destination string) error {
 	var err error
 	if s.client == nil {
 		ftpConfig := goftp.Config{
@@ -55,9 +55,9 @@ func (s *SeedrFTP) Get(file string, destination string) error {
 	}
 	// TODO: remove dev code
 	// isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi)$", file)
-	isAVideo, _ := regexp.MatchString("(.*?).(jpg|iso)$", file)
+	isAVideo, _ := regexp.MatchString("(.*?).(jpg|iso)$", file.Name)
 	if isAVideo {
-		filePathArray := strings.Split(file, "/")
+		filePathArray := strings.Split(file.Name, "/")
 		folder := filePathArray[len(filePathArray)-2]
 		if folder == filePathArray[0] {
 			folder = "Files"
@@ -70,7 +70,7 @@ func (s *SeedrFTP) Get(file string, destination string) error {
 			log.Println("Error creating destination file: ", err)
 			return err
 		}
-		s.client.Retrieve(file, destFile)
+		s.client.Retrieve(file.Name, destFile)
 	}
 	return err
 }

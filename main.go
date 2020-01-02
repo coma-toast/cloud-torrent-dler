@@ -16,7 +16,7 @@ import (
 // SeedrInstance is the instance
 type SeedrInstance interface {
 	Add(magnet string) error
-	Get(file string, destination string) error
+	Get(item DownloadItem, destination string) error
 	GetPath(ID int) (string, error)
 	FindID(filename string) (int, error)
 	List(path string) ([]os.FileInfo, error)
@@ -71,10 +71,6 @@ func main() {
 		}
 	}()
 
-	// TODO: completed folder should be an array of folders to be monitored with
-	// their own download destinations - for example, you can do a kids/not kids
-	// download separately.
-
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 
 	// downloadWorker()
@@ -86,26 +82,21 @@ func main() {
 				panic(err)
 			}
 
-			for _, file := range list {
-				isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", file.Name)
+			for _, item := range list {
+				isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", item.Name)
 				if isAVideo {
-					// file.Name = sanitizeText(file.Name)
-					setCacheSeedrInfo(selectedSeedr, downloadFolder, file.Name)
-					// spew.Dump("FILE", file)
-					// folderPath := fmt.Sprintf("%s/%s/", conf.DlRoot, downloadFolder)
-					// fmt.Println("folderPath: " + folderPath)
-					// _, err = os.Stat(folderPath)
-					// if err != nil {
-					// 	if os.IsNotExist(err) {
-					// 		err = selectedSeedr.Get(file.Name, folderPath)
-					// 		if err != nil {
-					// 			fmt.Println(err)
-					// 		}
-
-					// 		// defer addToDeleteQueue(file)
-
-					// 	}
-					// }
+					setCacheSeedrInfo(selectedSeedr, downloadFolder, &item)
+					localPath := fmt.Sprintf("%s/%s", conf.DlRoot, item.FolderPath)
+					fmt.Println("localPath: " + localPath)
+					_, err = os.Stat(localPath + item.Name)
+					if err != nil {
+						if os.IsNotExist(err) {
+							err = selectedSeedr.Get(item, conf.DlRoot)
+							if err != nil {
+								fmt.Println(err)
+							}
+						}
+					}
 				}
 			}
 		}
@@ -115,24 +106,28 @@ func main() {
 	<-dontExit
 }
 
-func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, filename string) error {
+func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item *DownloadItem) error {
+	var err error
+	filename := item.Name
 	folderName := string(filename[0 : len(filename)-4])
-	if !cache.IsSet(folderName) {
-		folderName = sanitizeText(folderName)
-		folderItem := cache.Get(folderName)
-		id, err := selectedSeedr.FindID(filename)
-		if err != nil {
-			return err
-		}
+	// if !cache.IsSet(folderName) {
+	folderName = sanitizeText(folderName)
+	cacheItem := cache.Get(folderName)
 
-		folderItem.SeedrID = id
-		folderItem.Name = filename
-		folderItem.FolderPath = fmt.Sprintf("%s/%s", downloadFolder, folderName)
-		err = cache.Set(folderName, folderItem)
-		if err != nil {
-			return err
-		}
+	item.ShowID = cacheItem.ShowID
+	item.EpisodeID = cacheItem.EpisodeID
+	item.Name = filename
+	item.FolderPath = fmt.Sprintf("%s/%s", downloadFolder, folderName)
+	item.SeedrID, err = selectedSeedr.FindID(filename)
+	if err != nil {
+		return err
 	}
+
+	err = cache.Set(folderName, *item)
+	if err != nil {
+		return err
+	}
+	// }
 
 	return nil
 }

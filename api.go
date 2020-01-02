@@ -64,53 +64,41 @@ func (s *SeedrAPI) List(path string) ([]os.FileInfo, error) {
 }
 
 // Get downloads the file name
-func (s *SeedrAPI) Get(file string, destination string) error {
+func (s *SeedrAPI) Get(item DownloadItem, destination string) error {
 	var err error
-	var downloadID = 0
-	var folderLength = 0
 
-	// TODO: figure out why the folderMapping is incorrect if you don't run this again
-	err = s.populateFolderMapping(0, "")
+	// TODO: I don't think I need this anymore? Delete it once confirmed
+	// if item.SeedrID == 0 {
+	// 	// TODO: figure out why the folderMapping is incorrect if you don't run this again
+	// 	err = s.populateFolderMapping(0, "")
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	for id, name := range s.folderMapping {
+	// 		if strings.Contains(name, file.Name) {
+	// 			fmt.Println("found", item, id, name, folderLength)
+	// 			if len(name) > folderLength {
+	// 				downloadID = id
+	// 				folderLength = len(name)
+	// 				fmt.Printf("ID for %s is %d\n", item, downloadID)
+	// 			}
+	// 		}
+	// 	}
+	// }
+	// spew.Dump(s.folderMapping)
+
+	fmt.Printf("Downloading file: %s\n", item.Name)
+	fmt.Printf("DownloadFileByID(%d)\n", item.SeedrID)
+	fmt.Println("destination: " + destination)
 	if err != nil {
 		return err
 	}
-	// spew.Dump(s.folderMapping)
 
-	// * dev code
-	// isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", file)
+	path := fmt.Sprintf("%s/%s/%s", destination, item.FolderPath, item.Name)
 
-	fmt.Printf("Downloading file: %s\n", file)
-
-	for id, name := range s.folderMapping {
-		if strings.Contains(name, file) {
-			fmt.Println("found", file, id, name, folderLength)
-			if len(name) > folderLength {
-				downloadID = id
-				folderLength = len(name)
-				fmt.Printf("ID for %s is %d\n", file, downloadID)
-			}
-		}
-	}
-	if downloadID != 0 {
-		fmt.Printf("DownloadFileByID(%d), file: %s\n", downloadID, file)
-		if err != nil {
-			return err
-		}
-		seedrPath, err := s.GetPath(downloadID)
-		fmt.Println("seedrPath " + seedrPath)
-		if err != nil {
-			return err
-		}
-
-		path := fmt.Sprintf("%s/%s/%s", destination, seedrPath, file)
-
-		fmt.Println(path)
-		os.Exit(2)
-		// TODO: make subfolders. file.ParentFolder (int) -> getFolderFromID + path
-		err = s.client.DownloadFileByID(downloadID, path)
-		if err != nil {
-			return err
-		}
+	err = s.client.DownloadFileByID(item.SeedrID, path)
+	if err != nil {
+		return err
 	}
 
 	return err
