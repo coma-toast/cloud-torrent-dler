@@ -67,29 +67,7 @@ func (s *SeedrAPI) List(path string) ([]os.FileInfo, error) {
 func (s *SeedrAPI) Get(item DownloadItem, destination string) error {
 	var err error
 
-	// TODO: I don't think I need this anymore? Delete it once confirmed
-	// if item.SeedrID == 0 {
-	// 	// TODO: figure out why the folderMapping is incorrect if you don't run this again
-	// 	err = s.populateFolderMapping(0, "")
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	for id, name := range s.folderMapping {
-	// 		if strings.Contains(name, file.Name) {
-	// 			fmt.Println("found", item, id, name, folderLength)
-	// 			if len(name) > folderLength {
-	// 				downloadID = id
-	// 				folderLength = len(name)
-	// 				fmt.Printf("ID for %s is %d\n", item, downloadID)
-	// 			}
-	// 		}
-	// 	}
-	// }
-	// spew.Dump(s.folderMapping)
-
 	fmt.Printf("Downloading file: %s\n", item.Name)
-	fmt.Printf("DownloadFileByID(%d)\n", item.SeedrID)
-	fmt.Println("destination: " + destination)
 	if err != nil {
 		return err
 	}
@@ -136,7 +114,6 @@ func (s *SeedrAPI) Add(magnet string) error {
 
 // GetPath returns the full path of the file in Seedr, for path replication locally
 func (s *SeedrAPI) GetPath(queryID int) (string, error) {
-	fmt.Println("queryID ", queryID)
 	var err error
 	if s.folderMapping == nil {
 		s.folderMapping = make(map[int]string)

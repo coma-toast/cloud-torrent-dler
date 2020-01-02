@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/kennygrant/sanitize"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/pidcheck"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/showrss"
@@ -74,8 +73,7 @@ func main() {
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 
 	// downloadWorker()
-	for range time.NewTicker(time.Second * 10).C {
-		fmt.Println("Tick...")
+	for range time.NewTicker(time.Minute * 5).C {
 		for _, downloadFolder := range conf.CompletedFolder {
 			list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
 			if err != nil {
@@ -87,7 +85,6 @@ func main() {
 				if isAVideo {
 					setCacheSeedrInfo(selectedSeedr, downloadFolder, &item)
 					localPath := fmt.Sprintf("%s/%s", conf.DlRoot, item.FolderPath)
-					fmt.Println("localPath: " + localPath)
 					_, err = os.Stat(localPath + item.Name)
 					if err != nil {
 						if os.IsNotExist(err) {
@@ -225,11 +222,8 @@ func AddMagnet(instance SeedrInstance, data Magnet, showID int) error {
 			part = strings.TrimPrefix(part, "dn=")
 			part = strings.ReplaceAll(part, "+", " ")
 			itemData.Name = part
-			fmt.Println(part)
 		}
 	}
-	spew.Dump(itemData)
-	// os.Exit(7)
 
 	err := cache.Set(data.name, itemData)
 	if err != nil {
