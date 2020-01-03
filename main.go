@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -105,11 +106,11 @@ func main() {
 						}
 					}
 				}
-				fmt.Println("Pretend delete item after downloading: " + item.Name)
-				// err = selectedSeedr.DeleteFile(item.SeedrID)
-				// if err != nil {
-				// fmt.Println(err)
-				// }
+				// fmt.Println("Pretend delete item after downloading: " + item.Name)
+				err = selectedSeedr.DeleteFile(item.SeedrID)
+				if err != nil {
+					fmt.Println(err)
+				}
 
 				folderID, err := selectedSeedr.FindID(item.FolderPath)
 				if err != nil {
@@ -119,12 +120,6 @@ func main() {
 
 				DeleteQueue[item.FolderPath] = folderID
 			}
-			// if err != nil {
-			// 	fmt.Println(err)
-			// }t(item, conf.DlRoot)
-			// if err != nil {
-			// 	fmt.Println(err)
-			// }
 		}
 		deleteTheQueue(selectedSeedr, DeleteQueue)
 	}
@@ -136,7 +131,7 @@ func main() {
 func deleteTheQueue(selectedSeedr SeedrInstance, DeleteQueue map[string]int) {
 	for name, id := range DeleteQueue {
 		fmt.Println("This would delete item: " + name)
-		_ = id
+		fmt.Println("The folder ID would be: " + strconv.Itoa(id))
 		var err error
 		// err := selectedSeedr.DeleteFolder(id)
 		if err != nil {
