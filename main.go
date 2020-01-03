@@ -56,6 +56,7 @@ func main() {
 		fmt.Println(err)
 	}
 
+	DeleteQueue = make(map[string]int)
 	selectedSeedr := conf.GetSeedrInstance()
 	// _ = selectedSeedr
 
@@ -96,18 +97,19 @@ func main() {
 					_, err = os.Stat(localPath + item.Name)
 					if err != nil {
 						if os.IsNotExist(err) {
-							// err = selectedSeedr.Get(item, conf.DlRoot)
-							// if err != nil {
-							// 	fmt.Println(err)
-							// }
-							fmt.Printf("Pretend downloading %s\n", item.Name)
+							err = selectedSeedr.Get(item, conf.DlRoot)
+							if err != nil {
+								fmt.Println(err)
+							}
+							// fmt.Printf("Pretend downloading %s\n", item.Name)
 						}
 					}
 				}
-				err = selectedSeedr.DeleteFile(item.SeedrID)
-				if err != nil {
-					fmt.Println(err)
-				}
+				fmt.Println("Pretend delete item after downloading: " + item.Name)
+				// err = selectedSeedr.DeleteFile(item.SeedrID)
+				// if err != nil {
+				// fmt.Println(err)
+				// }
 
 				folderID, err := selectedSeedr.FindID(item.FolderPath)
 				if err != nil {
@@ -116,29 +118,32 @@ func main() {
 				}
 
 				DeleteQueue[item.FolderPath] = folderID
-			}r.Ger.Get(item, conf.DlRoot)
-							// if err != nil {
-							// 	fmt.Println(err)
-							// }t(item, conf.DlRoot)
-							// if err != nil {
-							// 	fmt.Println(err)
-							// }
+			}
+			// if err != nil {
+			// 	fmt.Println(err)
+			// }t(item, conf.DlRoot)
+			// if err != nil {
+			// 	fmt.Println(err)
+			// }
 		}
 		deleteTheQueue(selectedSeedr, DeleteQueue)
 	}
-	
+
 	// Waiting for a channel that never comes...
 	<-dontExit
 }
 
 func deleteTheQueue(selectedSeedr SeedrInstance, DeleteQueue map[string]int) {
 	for name, id := range DeleteQueue {
-		err := selectedSeedr.DeleteFolder(id)
+		fmt.Println("This would delete item: " + name)
+		_ = id
+		var err error
+		// err := selectedSeedr.DeleteFolder(id)
 		if err != nil {
 			fmt.Println(err)
 		}
 	}
-} 
+}
 
 func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item *DownloadItem) error {
 	var err error
@@ -302,8 +307,6 @@ func findAllToDownload(instance SeedrInstance, path string, ftp bool) ([]Downloa
 
 	return downloads, err
 }
-
-// var DeleteQueue []int
 
 // getNewEpisodes is a loop to look for new shows added to the RSS feed to then add to the download queue
 func getNewEpisodes(url string) ([]Magnet, error) {
