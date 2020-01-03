@@ -15,9 +15,11 @@ import (
 // SeedrInstance is the instance
 type SeedrInstance interface {
 	Add(magnet string) error
+	DeleteFile(id int) error
+	DeleteFolder(id int) error
+	FindID(filename string) (int, error)
 	Get(item DownloadItem, destination string) error
 	GetPath(ID int) (string, error)
-	FindID(filename string) (int, error)
 	List(path string) ([]os.FileInfo, error)
 }
 
@@ -40,7 +42,11 @@ type DownloadItem struct {
 // One cache to rule them all
 var cache = &Cache{}
 var dryRun = false
-var DeleteQueue = []DownloadItem{}
+
+// DeleteQueue is a list of folders to delete.
+// Using a queue since there could be multiple files in a single folder
+// so we want to wait until the loop is done before deleting the folder.
+var DeleteQueue = map[string]int{}
 
 func main() {
 	conf = getConf()
@@ -73,8 +79,8 @@ func main() {
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 
 	// downloadWorker()
-	// for range time.NewTicker(time.Second * 5).C {
-	for range time.NewTicker(time.Minute * 1).C {
+	for range time.NewTicker(time.Second * 5).C {
+		// for range time.NewTicker(time.Minute * 1).C {
 		for _, downloadFolder := range conf.CompletedFolder {
 			list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
 			if err != nil {
@@ -90,20 +96,49 @@ func main() {
 					_, err = os.Stat(localPath + item.Name)
 					if err != nil {
 						if os.IsNotExist(err) {
-							err = selectedSeedr.Get(item, conf.DlRoot)
-							if err != nil {
-								fmt.Println(err)
-							}
+							// err = selectedSeedr.Get(item, conf.DlRoot)
+							// if err != nil {
+							// 	fmt.Println(err)
+							// }
+							fmt.Printf("Pretend downloading %s\n", item.Name)
 						}
 					}
 				}
-			}
-		}
-	}
+				err = selectedSeedr.DeleteFile(item.SeedrID)
+				if err != nil {
+					fmt.Println(err)
+				}
 
+				folderID, err := selectedSeedr.FindID(item.FolderPath)
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+
+				DeleteQueue[item.FolderPath] = folderID
+			}r.Ger.Get(item, conf.DlRoot)
+							// if err != nil {
+							// 	fmt.Println(err)
+							// }t(item, conf.DlRoot)
+							// if err != nil {
+							// 	fmt.Println(err)
+							// }
+		}
+		deleteTheQueue(selectedSeedr, DeleteQueue)
+	}
+	
 	// Waiting for a channel that never comes...
 	<-dontExit
 }
+
+func deleteTheQueue(selectedSeedr SeedrInstance, DeleteQueue map[string]int) {
+	for name, id := range DeleteQueue {
+		err := selectedSeedr.DeleteFolder(id)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+} 
 
 func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item *DownloadItem) error {
 	var err error

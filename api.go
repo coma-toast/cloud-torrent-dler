@@ -114,8 +114,6 @@ func (s *SeedrAPI) Add(magnet string) error {
 	return nil
 }
 
-// TODO: make sure we download the longest file name - folders may be named the same, or there may be duplicates
-
 // GetPath returns the full path of the file in Seedr, for path replication locally
 func (s *SeedrAPI) GetPath(queryID int) (string, error) {
 	var err error
@@ -133,6 +131,16 @@ func (s *SeedrAPI) GetPath(queryID int) (string, error) {
 	}
 
 	return pathName, err
+}
+
+// DeleteFile deletes a file from Seedr
+func (s *SeedrAPI) DeleteFile(id int) error {
+	return s.client.DeleteFile(id)
+}
+
+// DeleteFolder deletes a folder from Seedr
+func (s *SeedrAPI) DeleteFolder(id int) error {
+	return s.client.DeleteFolder(id)
 }
 
 func (s *SeedrAPI) getFolderIDFromPath(path string) (int, error) {

@@ -3,6 +3,7 @@ package seedr
 import (
 	"fmt"
 	"io/ioutil"
+	"strconv"
 
 	"github.com/davecgh/go-spew/spew"
 )
@@ -11,8 +12,26 @@ import (
 type Service interface {
 	GetFolder(id int) (Folder, error)
 	GetFile(id int) (File, error)
+	DeleteFile(id int) error
+	DeleteFolder(id int) error
 	DownloadFileByID(id int, destination string) error
 	AddMagnet(magnet string) error
+}
+
+// DeleteFolder deletes a folder from Seedr
+func (c Client) DeleteFolder(id int) error {
+	fmt.Println("here")
+	url := fmt.Sprintf("/folder/%s", strconv.Itoa(id))
+	_, err := c.call("DELETE", url, nil, nil)
+	return err
+}
+
+// DeleteFile deletes a file from Seedr
+func (c Client) DeleteFile(id int) error {
+	fmt.Println("here")
+	url := fmt.Sprintf("/file/%s", strconv.Itoa(id))
+	_, err := c.call("DELETE", url, nil, nil)
+	return err
 }
 
 // GetFolder gets a Folder from Seedr

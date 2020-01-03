@@ -81,6 +81,15 @@ func (s *SeedrFTP) Add(magnet string) error {
 	return err
 }
 
+// DeleteFolder doesn't work yet.
+func (s *SeedrFTP) DeleteFolder(id int) error {
+	return nil
+}
+// DeleteFile doesn't work yet.
+func (s *SeedrFTP) DeleteFile(id int) error {
+	return nil
+}
+
 // FindID is unsupported
 func (s *SeedrFTP) FindID(filename string) (int, error) {
 	err := fmt.Errorf("Finding Seedr ID does not work on FTP")
