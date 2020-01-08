@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/kennygrant/sanitize"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/pidcheck"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/showrss"
@@ -73,6 +74,7 @@ func main() {
 	go func() {
 		checkNewEpisodes(selectedSeedr)
 		// ticker to control how often the loop runs
+		// for range time.NewTicker(time.Second * 10).C {
 		for range time.NewTicker(time.Minute * 1).C {
 			checkNewEpisodes(selectedSeedr)
 		}
@@ -81,8 +83,8 @@ func main() {
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 
 	// downloadWorker()
-	for range time.NewTicker(time.Second * 5).C {
-		// for range time.NewTicker(time.Minute * 1).C {
+	// for range time.NewTicker(time.Second * 5).C {
+	for range time.NewTicker(time.Minute * 1).C {
 		for _, downloadFolder := range conf.CompletedFolder {
 			list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
 			if err != nil {
@@ -106,8 +108,9 @@ func main() {
 						}
 					}
 				}
-				// fmt.Println("Pretend delete item after downloading: " + item.Name)
-				err = selectedSeedr.DeleteFile(item.SeedrID)
+				fmt.Println("Pretend delete item after downloading: " + item.Name)
+				spew.Dump(item)
+				// err = selectedSeedr.DeleteFile(item.SeedrID)
 				if err != nil {
 					fmt.Println(err)
 				}
