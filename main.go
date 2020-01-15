@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -44,11 +45,6 @@ type DownloadItem struct {
 var cache = &Cache{}
 var dryRun = false
 
-// DeleteQueue is a list of folders to delete.
-// Using a queue since there could be multiple files in a single folder
-// so we want to wait until the loop is done before deleting the folder.
-var DeleteQueue = map[string]int{}
-
 func main() {
 	conf = getConf()
 	err := cache.Initialize(conf.CachePath)
@@ -57,7 +53,6 @@ func main() {
 		fmt.Println(err)
 	}
 
-	DeleteQueue = make(map[string]int)
 	selectedSeedr := conf.GetSeedrInstance()
 	// _ = selectedSeedr
 
@@ -83,7 +78,9 @@ func main() {
 	// downloadWorker()
 	for range time.NewTicker(time.Second * 5).C {
 		// for range time.NewTicker(time.Minute * 1).C {
-		for _, downloadFolder := range conf.CompletedFolder {
+		deleteQueue := make(map[string]int)
+		for _, downloadFolder := range conf.CompletedFolders {
+			// TODO: can findAllToDownload be called once, outside this loop?
 			list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
 			if err != nil {
 				panic(err)
@@ -106,8 +103,8 @@ func main() {
 						}
 					}
 				}
-				// fmt.Println("Pretend delete item after downloading: " + item.Name)
-				err = selectedSeedr.DeleteFile(item.SeedrID)
+				fmt.Println("Pretend delete item after downloading: " + item.Name)
+				// err = selectedSeedr.DeleteFile(item.SeedrID)
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -118,18 +115,18 @@ func main() {
 					continue
 				}
 
-				DeleteQueue[item.FolderPath] = folderID
+				deleteQueue[item.FolderPath] = folderID
 			}
 		}
-		deleteTheQueue(selectedSeedr, DeleteQueue)
+		deleteTheQueue(selectedSeedr, deleteQueue)
 	}
 
 	// Waiting for a channel that never comes...
 	<-dontExit
 }
 
-func deleteTheQueue(selectedSeedr SeedrInstance, DeleteQueue map[string]int) {
-	for name, id := range DeleteQueue {
+func deleteTheQueue(selectedSeedr SeedrInstance, deleteQueue map[string]int) {
+	for name, id := range deleteQueue {
 		fmt.Println("This would delete item: " + name)
 		fmt.Println("The folder ID would be: " + strconv.Itoa(id))
 		var err error
@@ -166,9 +163,10 @@ func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item 
 	return nil
 }
 
+//TODO: move out of main
 func sanitizeText(input string) string {
 	var extension string
-	extension = input[len(input)-4:]
+	extension = filepath.Ext(input)
 	output := sanitize.BaseName(input)
 	output = strings.ReplaceAll(output, "-", " ")
 	hasExtension, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v|txt|jpg)$", input)
@@ -178,17 +176,6 @@ func sanitizeText(input string) string {
 
 	return output
 }
-
-// func addToDeleteQueue(file DownloadItem) {
-// 	var deleteItem int
-
-// 	deleteItem.SeerID = file.SeedrID
-// 	deleteItem.Name = file.Name
-// 	deleteItem.FolderPath = file.Name
-
-// 	DeleteQueue = append(DeleteQueue, deleteItem)
-// 	fmt.Printf("Deleting %s\n", file.Name)
-// }
 
 func checkNewEpisodes(selectedSeedr SeedrInstance) {
 	initializeMagnetList, err := getNewEpisodes(conf.ShowRSS)
@@ -271,6 +258,7 @@ func AddMagnet(instance SeedrInstance, data Magnet, showID int) error {
 }
 
 func findAllToDownload(instance SeedrInstance, path string, ftp bool) ([]DownloadItem, error) {
+	// TODO: the 2 api calls need test cases, test the structs
 	files, err := instance.List(path)
 
 	if err != nil {

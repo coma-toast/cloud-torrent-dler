@@ -12,7 +12,7 @@ type config struct {
 	DlRoot          string
 	PidFilePath     string
 	CachePath       string
-	CompletedFolder []string
+	CompletedFolders []string
 	ShowRSS         string
 	Username        string
 	Passwd          string

@@ -1,0 +1,45 @@
+package main
+
+import "os"
+
+type mockSeedrInstance struct {
+}
+
+// Add is test
+func (m mockSeedrInstance) Add(magnet string) error {
+	return nil
+
+}
+
+// DeleteFile is test
+func (m mockSeedrInstance) DeleteFile(id int) error {
+	return nil
+
+}
+
+// DeleteFolder is test
+func (m mockSeedrInstance) DeleteFolder(id int) error {
+	return nil
+
+}
+
+// FindID is test
+func (m mockSeedrInstance) FindID(filename string) (int, error) {
+	return 0, nil
+
+}
+
+// Get is test
+func (m mockSeedrInstance) Get(item DownloadItem, destination string) error {
+	return nil
+}
+
+// GetPath is test
+func (m mockSeedrInstance) GetPath(ID int) (string, error) {
+	return "", nil
+}
+
+// List is test
+func (m mockSeedrInstance) List(path string) ([]os.FileInfo, error) {
+	return []os.FileInfo{}, nil
+}

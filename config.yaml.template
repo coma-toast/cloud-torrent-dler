@@ -6,7 +6,7 @@ PidFilePath: "/path"
 CachePath: "/home/username/cache.json"
 # Array of folders to monitor for completed downloads. Subfolders here will map to subfolders in DlRoot
 # NOTE: Multiple folders do no work in this pre-release version - only put 1 here for now
-CompletedFolder: ["Completed/Kids", "Completed/NotKids"]
+CompletedFolders: ["Completed/Kids", "Completed/NotKids"]
 Username: "username"
 Passwd: "password"
 # URL to your ShowRSS.info feed

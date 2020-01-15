@@ -3,3 +3,4 @@ config.yaml
 ctd.log
 cloud-torrent-downloader
 .DS_Store
+var/
