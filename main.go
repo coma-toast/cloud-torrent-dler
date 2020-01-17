@@ -3,14 +3,12 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/kennygrant/sanitize"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/pidcheck"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/showrss"
 )
@@ -80,7 +78,8 @@ func main() {
 	// downloadWorker()
 	// for range time.NewTicker(time.Second * 5).C {
 	for range time.NewTicker(time.Minute * 1).C {
-		for _, downloadFolder := range conf.CompletedFolder {
+		deleteQueue := make(map[string]int)
+		for _, downloadFolder := range conf.CompletedFolders {
 			list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
 			if err != nil {
 				panic(err)
@@ -162,20 +161,6 @@ func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item 
 	// }
 
 	return nil
-}
-
-//TODO: move out of main
-func sanitizeText(input string) string {
-	var extension string
-	extension = filepath.Ext(input)
-	output := sanitize.BaseName(input)
-	output = strings.ReplaceAll(output, "-", " ")
-	hasExtension, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v|txt|jpg)$", input)
-	if hasExtension {
-		output = output + extension
-	}
-
-	return output
 }
 
 func checkNewEpisodes(selectedSeedr SeedrInstance) {

@@ -5,31 +5,6 @@ import (
 	"testing"
 )
 
-func Test_sanitizeText(t *testing.T) {
-	type args struct {
-		input string
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		// TODO: Add test cases.
-		{
-			name: "full directory path",
-			args: args{input: "showname/episode_2.avi"},
-			want: "showname-episode_2.avi",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := sanitizeText(tt.args.input); got != tt.want {
-				t.Errorf("sanitizeText() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func Test_findAllToDownload(t *testing.T) {
 	seedrInstance := mockSeedrInstance{}
 	type args struct {
