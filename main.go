@@ -81,6 +81,7 @@ func main() {
 	for range time.NewTicker(time.Second * 10).C {
 		// for range time.NewTicker(time.Minute * 1).C {
 		fmt.Println("start ticker")
+		spew.Dump(conf)
 		deleteQueue := make(map[string]int)
 		for _, downloadFolder := range conf.CompletedFolders {
 			fmt.Println("loop the downloadFolders")
