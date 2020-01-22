@@ -83,6 +83,7 @@ func main() {
 		fmt.Println("start ticker")
 		deleteQueue := make(map[string]int)
 		for _, downloadFolder := range conf.CompletedFolders {
+			fmt.Println("loop the downloadFolders")
 			list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
 			if err != nil {
 				panic(err)
