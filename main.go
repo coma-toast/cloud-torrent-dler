@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/helper"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/pidcheck"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/showrss"
@@ -77,8 +78,9 @@ func main() {
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 
 	// downloadWorker()
-	// for range time.NewTicker(time.Second * 10).C {
-	for range time.NewTicker(time.Minute * 1).C {
+	for range time.NewTicker(time.Second * 10).C {
+		// for range time.NewTicker(time.Minute * 1).C {
+		fmt.Println("start ticker")
 		deleteQueue := make(map[string]int)
 		for _, downloadFolder := range conf.CompletedFolders {
 			list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
@@ -87,7 +89,7 @@ func main() {
 			}
 
 			for _, item := range list {
-				// spew.Dump(item)
+				spew.Dump("item in list loop", item)
 				// os.Exit(1)
 				// isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", item.Name)
 				isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", item.Name)
