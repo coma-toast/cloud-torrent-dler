@@ -77,8 +77,8 @@ func main() {
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 
 	// downloadWorker()
-	for range time.NewTicker(time.Second * 10).C {
-		// for range time.NewTicker(time.Minute * 1).C {
+	// for range time.NewTicker(time.Second * 10).C {
+	for range time.NewTicker(time.Minute * 1).C {
 		deleteQueue := make(map[string]int)
 		for _, downloadFolder := range conf.CompletedFolders {
 			list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
