@@ -97,19 +97,21 @@ func main() {
 					_, err = os.Stat(localPath + item.Name)
 					if err != nil {
 						if os.IsNotExist(err) {
+							// fmt.Printf("Downloading %s\n", item.Name)
 							err = selectedSeedr.Get(item, conf.DlRoot)
 							if err != nil {
 								fmt.Println(err)
 							}
-							// fmt.Printf("Pretend downloading %s\n", item.Name)
 						}
 					}
 				}
-				fmt.Println("Deleting item after downloading: " + item.Name)
-				// spew.Dump(item)
-				err = selectedSeedr.DeleteFile(item.SeedrID)
-				if err != nil {
-					fmt.Println(err)
+				if conf.DeleteAfterDownload {
+					fmt.Println("Deleting item after downloading: " + item.Name)
+					// spew.Dump(item)
+					err = selectedSeedr.DeleteFile(item.SeedrID)
+					if err != nil {
+						fmt.Println(err)
+					}
 				}
 
 				folderID, err := selectedSeedr.FindID(item.FolderPath)

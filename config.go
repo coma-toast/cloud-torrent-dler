@@ -8,16 +8,17 @@ import (
 
 // config is the configuration struct
 type config struct {
-	BaseURL         string
-	DlRoot          string
-	PidFilePath     string
-	CachePath       string
-	CompletedFolders []string
-	ShowRSS         string
-	Username        string
-	Passwd          string
-	UseFTP          bool
-	UseAPI          bool
+	BaseURL             string
+	DlRoot              string
+	PidFilePath         string
+	CachePath           string
+	CompletedFolders    []string
+	ShowRSS             string
+	Username            string
+	Passwd              string
+	UseFTP              bool
+	UseAPI              bool
+	DeleteAfterDownload bool
 }
 
 func (c config) GetSeedrInstance() SeedrInstance {
