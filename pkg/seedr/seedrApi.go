@@ -19,7 +19,6 @@ type Service interface {
 
 // DeleteFolder deletes a folder from Seedr
 func (c Client) DeleteFolder(id int) error {
-	fmt.Println("here")
 	url := fmt.Sprintf("/folder/%d", id)
 	_, err := c.call("DELETE", url, nil, nil)
 	return err
@@ -27,7 +26,6 @@ func (c Client) DeleteFolder(id int) error {
 
 // DeleteFile deletes a file from Seedr
 func (c Client) DeleteFile(id int) error {
-	fmt.Println("here")
 	url := fmt.Sprintf("/file/%d", id)
 	_, err := c.call("DELETE", url, nil, nil)
 	return err

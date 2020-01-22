@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
+	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/helper"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/pidcheck"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/showrss"
 )
@@ -21,7 +21,7 @@ type SeedrInstance interface {
 	FindID(filename string) (int, error)
 	Get(item DownloadItem, destination string) error
 	GetPath(ID int) (string, error)
-	List(path string) ([]os.FileInfo, error)
+	List(path string) ([]DownloadItem, error)
 }
 
 // Magnet is for magnet links and their ID
@@ -34,10 +34,11 @@ type Magnet struct {
 // DownloadItem is the information needed for the download queue
 type DownloadItem struct {
 	EpisodeID  int
-	ShowID     int
-	SeedrID    int
-	Name       string
 	FolderPath string
+	IsDir      bool
+	Name       string
+	SeedrID    int
+	ShowID     int
 }
 
 // One cache to rule them all
@@ -76,8 +77,8 @@ func main() {
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 
 	// downloadWorker()
-	// for range time.NewTicker(time.Second * 5).C {
-	for range time.NewTicker(time.Minute * 1).C {
+	for range time.NewTicker(time.Second * 10).C {
+		// for range time.NewTicker(time.Minute * 1).C {
 		deleteQueue := make(map[string]int)
 		for _, downloadFolder := range conf.CompletedFolders {
 			list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
@@ -86,6 +87,8 @@ func main() {
 			}
 
 			for _, item := range list {
+				// spew.Dump(item)
+				// os.Exit(1)
 				// isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", item.Name)
 				isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", item.Name)
 				if isAVideo {
@@ -102,9 +105,9 @@ func main() {
 						}
 					}
 				}
-				fmt.Println("Pretend delete item after downloading: " + item.Name)
-				spew.Dump(item)
-				// err = selectedSeedr.DeleteFile(item.SeedrID)
+				fmt.Println("Deleting item after downloading: " + item.Name)
+				// spew.Dump(item)
+				err = selectedSeedr.DeleteFile(item.SeedrID)
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -140,15 +143,13 @@ func deleteTheQueue(selectedSeedr SeedrInstance, deleteQueue map[string]int) {
 func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item *DownloadItem) error {
 	var err error
 	filename := item.Name
-	folderName := string(filename[0 : len(filename)-4])
+	folderName := helper.SanitizeText(string(filename[0 : len(filename)-4]))
 	// if !cache.IsSet(folderName) {
-	folderName = sanitizeText(folderName)
 	cacheItem := cache.Get(folderName)
 
 	item.ShowID = cacheItem.ShowID
 	item.EpisodeID = cacheItem.EpisodeID
-	item.Name = filename
-	item.FolderPath = fmt.Sprintf("%s/%s", downloadFolder, folderName)
+	// item.FolderPath = fmt.Sprintf("%s/%s", downloadFolder, folderName)
 	item.SeedrID, err = selectedSeedr.FindID(filename)
 	if err != nil {
 		return err
@@ -253,20 +254,16 @@ func findAllToDownload(instance SeedrInstance, path string, ftp bool) ([]Downloa
 	downloads := []DownloadItem{}
 
 	for _, file := range files {
-		var currentItem DownloadItem
-		currentItem.Name = file.Name()
-		currentItem.SeedrID = 0
+		nextPath := file.FolderPath
+		file.SeedrID = 0
+		file.FolderPath = path
+		// spew.Dump("path: "+path, file)
 
-		if ftp {
-			currentItem.FolderPath = path + "/" + file.Name()
+		if !file.IsDir {
+			downloads = append(downloads, file)
 		} else {
-			currentItem.FolderPath = file.Name()
-		}
+			newDownloads, err := findAllToDownload(instance, nextPath, ftp)
 
-		if !file.IsDir() {
-			downloads = append(downloads, currentItem)
-		} else {
-			newDownloads, err := findAllToDownload(instance, currentItem.FolderPath, ftp)
 			if err != nil {
 				return []DownloadItem{}, err
 			}

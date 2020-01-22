@@ -1,7 +1,5 @@
 package main
 
-import "os"
-
 type mockSeedrInstance struct {
 }
 
@@ -40,6 +38,6 @@ func (m mockSeedrInstance) GetPath(ID int) (string, error) {
 }
 
 // List is test
-func (m mockSeedrInstance) List(path string) ([]os.FileInfo, error) {
-	return []os.FileInfo{}, nil
+func (m mockSeedrInstance) List(path string) ([]DownloadItem, error) {
+	return []DownloadItem{}, nil
 }

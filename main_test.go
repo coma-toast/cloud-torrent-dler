@@ -22,6 +22,8 @@ func Test_findAllToDownload(t *testing.T) {
 		{
 			args: args{
 				instance: seedrInstance,
+				path:     "",
+				ftp:      false,
 			},
 		},
 	}

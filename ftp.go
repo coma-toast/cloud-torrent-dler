@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/secsy/goftp"
+	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/helper"
 )
 
 // SeedrFTP is the struct for FTP
@@ -20,7 +21,7 @@ type SeedrFTP struct {
 }
 
 // List gets a list of files or folders in a given path
-func (s *SeedrFTP) List(path string) ([]os.FileInfo, error) {
+func (s *SeedrFTP) List(path string) ([]DownloadItem, error) {
 	if s.client == nil {
 		ftpConfig := goftp.Config{
 			User:               s.Username,
@@ -32,12 +33,35 @@ func (s *SeedrFTP) List(path string) ([]os.FileInfo, error) {
 		var err error
 		s.client, err = goftp.DialConfig(ftpConfig, "ftp.seedr.cc")
 		if err != nil {
-			return []os.FileInfo{}, err
+			return []DownloadItem{}, err
 		}
 
 	}
 
-	return s.client.ReadDir(path)
+	folderList, err := s.client.ReadDir(path)
+	if err != nil {
+		return []DownloadItem{}, err
+	}
+
+	returnData := []DownloadItem{}
+
+	for _, file := range folderList {
+		name := helper.SanitizeText(file.Name())
+		var cacheData DownloadItem
+		if cache.IsSet(name) {
+			cacheData = cache.Get(name)
+		}
+		appendData := DownloadItem{
+			EpisodeID:  cacheData.EpisodeID,
+			ShowID:     cacheData.ShowID,
+			SeedrID:    cacheData.SeedrID,
+			Name:       file.Name(),
+			FolderPath: file.Name(),
+		}
+		returnData = append(returnData, appendData)
+	}
+
+	return returnData, nil
 }
 
 // Get downloads the files in the provided array of files
@@ -85,6 +109,7 @@ func (s *SeedrFTP) Add(magnet string) error {
 func (s *SeedrFTP) DeleteFolder(id int) error {
 	return nil
 }
+
 // DeleteFile doesn't work yet.
 func (s *SeedrFTP) DeleteFile(id int) error {
 	return nil

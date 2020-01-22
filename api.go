@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 
+	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/helper"
+
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/seedr"
 )
 
@@ -17,8 +19,8 @@ type SeedrAPI struct {
 }
 
 // List gets a list of files or folders
-func (s *SeedrAPI) List(path string) ([]os.FileInfo, error) {
-	folderList := []os.FileInfo{}
+func (s *SeedrAPI) List(path string) ([]DownloadItem, error) {
+	folderList := []DownloadItem{}
 	if s.client == nil {
 		s.client = &seedr.Client{
 			Username: s.Username,
@@ -31,7 +33,7 @@ func (s *SeedrAPI) List(path string) ([]os.FileInfo, error) {
 		err := s.populateFolderMapping(0, "")
 		// err := s.populateFolderMapping(23577)
 		if err != nil {
-			return []os.FileInfo{}, err
+			return []DownloadItem{}, err
 		}
 	}
 
@@ -39,24 +41,51 @@ func (s *SeedrAPI) List(path string) ([]os.FileInfo, error) {
 	if err != nil {
 		err = s.populateFolderMapping(0, "")
 		if err != nil {
-			return []os.FileInfo{}, err
+			return []DownloadItem{}, err
 		}
 		folderID, err = s.getFolderIDFromPath(path)
 		if err != nil {
-			return []os.FileInfo{}, err
+			return []DownloadItem{}, err
 		}
 	}
 
 	files, err := s.client.GetFolder(folderID)
 	if err != nil {
-		return []os.FileInfo{}, err
+		return []DownloadItem{}, err
 	}
 
 	for _, folder := range files.Folders {
-		folderList = append(folderList, folder)
+		name := helper.SanitizeText(folder.Name())
+		var cacheData DownloadItem
+		if cache.IsSet(name) {
+			cacheData = cache.Get(name)
+		}
+		appendData := DownloadItem{
+			EpisodeID:  cacheData.EpisodeID,
+			FolderPath: folder.SubFolderName,
+			IsDir:      folder.IsDir(),
+			Name:       folder.Name(),
+			SeedrID:    cacheData.SeedrID,
+			ShowID:     cacheData.ShowID,
+		}
+		folderList = append(folderList, appendData)
 	}
 	for _, file := range files.Files {
-		folderList = append(folderList, file)
+		name := helper.SanitizeText(file.Name())
+		var cacheData DownloadItem
+		if cache.IsSet(name) {
+			cacheData = cache.Get(name)
+		}
+
+		appendData := DownloadItem{
+			EpisodeID:  cacheData.EpisodeID,
+			FolderPath: file.FileName,
+			IsDir:      file.IsDir(),
+			Name:       file.Name(),
+			SeedrID:    cacheData.SeedrID,
+			ShowID:     cacheData.ShowID,
+		}
+		folderList = append(folderList, appendData)
 		s.folderMapping[file.ID] = file.FileName
 	}
 
@@ -78,6 +107,9 @@ func (s *SeedrAPI) Get(item DownloadItem, destination string) error {
 	os.MkdirAll(path, 0777)
 	// Full local path
 	path = fmt.Sprintf("%s/%s", path, item.Name)
+	// fmt.Println("full path: " + path)
+	// spew.Dump(item)
+	// os.Exit(4)
 	err = s.client.DownloadFileByID(item.SeedrID, path)
 	if err != nil {
 		return err

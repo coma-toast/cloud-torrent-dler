@@ -19,8 +19,8 @@ func Test_sanitizeText(t *testing.T) {
 		},
 		{
 			name: "filename",
-			args: args{input: "Rick_And_Morty S01E01 720p-BluRay 5.1 BONE.mp4"},
-			want: "rick_And_morty s01e01 720p bluRay 5.1 bone.mp4",
+			args: args{input: "Rick_And_Morty S01E01 720p-BluRay 5.1 BONE"},
+			want: "rick and morty s01e01 720p bluray 5 1 bone",
 		},
 	}
 	for _, tt := range tests {
