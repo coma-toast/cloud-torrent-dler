@@ -5,8 +5,6 @@ import (
 	"os"
 	"strings"
 
-	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/helper"
-
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/seedr"
 )
 
@@ -31,7 +29,6 @@ func (s *SeedrAPI) List(path string) ([]DownloadItem, error) {
 	if s.folderMapping == nil {
 		s.folderMapping = make(map[int]string)
 		err := s.populateFolderMapping(0, "")
-		// err := s.populateFolderMapping(23577)
 		if err != nil {
 			return []DownloadItem{}, err
 		}
@@ -55,35 +52,42 @@ func (s *SeedrAPI) List(path string) ([]DownloadItem, error) {
 	}
 
 	for _, folder := range files.Folders {
-		name := helper.SanitizeText(folder.Name())
+		name := folder.Name()
 		var cacheData DownloadItem
 		if cache.IsSet(name) {
 			cacheData = cache.Get(name)
 		}
 		appendData := DownloadItem{
-			EpisodeID:  cacheData.EpisodeID,
-			FolderPath: folder.SubFolderName,
-			IsDir:      folder.IsDir(),
-			Name:       folder.Name(),
-			SeedrID:    cacheData.SeedrID,
-			ShowID:     cacheData.ShowID,
+			EpisodeID:     cacheData.EpisodeID,
+			FolderPath:    folder.SubFolderName,
+			IsDir:         folder.IsDir(),
+			Name:          folder.Name(),
+			ParentSeedrID: folderID,
+			SeedrID:       cacheData.SeedrID,
+			ShowID:        cacheData.ShowID,
 		}
 		folderList = append(folderList, appendData)
 	}
 	for _, file := range files.Files {
-		name := helper.SanitizeText(file.Name())
+		name := file.Name()
+		id, err := s.getFileIDFromPath(name)
+		// fmt.Println(id, name)
+		if err != nil {
+			fmt.Println(err)
+		}
 		var cacheData DownloadItem
 		if cache.IsSet(name) {
 			cacheData = cache.Get(name)
 		}
 
 		appendData := DownloadItem{
-			EpisodeID:  cacheData.EpisodeID,
-			FolderPath: file.FileName,
-			IsDir:      file.IsDir(),
-			Name:       file.Name(),
-			SeedrID:    cacheData.SeedrID,
-			ShowID:     cacheData.ShowID,
+			EpisodeID:     cacheData.EpisodeID,
+			FolderPath:    file.FileName,
+			IsDir:         file.IsDir(),
+			Name:          file.Name(),
+			ParentSeedrID: folderID,
+			SeedrID:       id,
+			ShowID:        cacheData.ShowID,
 		}
 		folderList = append(folderList, appendData)
 		s.folderMapping[file.ID] = file.FileName
@@ -178,6 +182,14 @@ func (s *SeedrAPI) DeleteFolder(id int) error {
 func (s *SeedrAPI) getFolderIDFromPath(path string) (int, error) {
 	var err error
 
+	if s.folderMapping == nil {
+		s.folderMapping = make(map[int]string)
+		err := s.populateFolderMapping(0, "")
+		if err != nil {
+			return 0, err
+		}
+	}
+
 	for id, pathName := range s.folderMapping {
 		if pathName == path {
 			return id, err
@@ -189,8 +201,31 @@ func (s *SeedrAPI) getFolderIDFromPath(path string) (int, error) {
 	return 0, err
 }
 
+func (s *SeedrAPI) getFileIDFromPath(path string) (int, error) {
+	var err error
+
+	if s.folderMapping == nil {
+		s.folderMapping = make(map[int]string)
+		err := s.populateFolderMapping(0, "")
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	for id, pathName := range s.folderMapping {
+		if strings.Contains(pathName, path) {
+			return id, err
+		}
+	}
+
+	err = fmt.Errorf("Path not found: %s", path)
+
+	return 0, err
+}
+
 func (s *SeedrAPI) populateFolderMapping(ID int, path string) error {
 	folder, err := s.client.GetFolder(ID)
+	// folder.FolderName = helper.SanitizeText(folder.FolderName)
 
 	if err != nil {
 		return err
@@ -215,6 +250,7 @@ func (s *SeedrAPI) populateFolderMapping(ID int, path string) error {
 
 	if len(folder.Files) > 0 {
 		for _, file := range folder.Files {
+			// file.FileName = helper.SanitizeText(file.FileName)
 			s.folderMapping[file.ID] = folder.FolderName + "/" + file.FileName
 		}
 	}
