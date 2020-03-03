@@ -16,7 +16,7 @@ Auto-download from a cloud torrent provider (Seedr) and save in a folder (expose
 - git clone
 - `cp config.yaml.template config.yaml`
 - edit `config.yaml` with your parameters
-- make folder in Seedr to match your local folder structure
+- make folders in Seedr to match your local folder structure
 - For example:
   - Seedr Folders:
     - `["Movies/Kids", "Movies/Not Kids", "Shows"]`
@@ -26,7 +26,7 @@ Auto-download from a cloud torrent provider (Seedr) and save in a folder (expose
     - `Movies/`
       - `Kids/`
       - `Not Kids/`
-- `go build -i`
+- `go build`
 - `./cloud-torrent-dler`
   - use `&` at the end to run in the background
   - or run in a `screen`
@@ -39,3 +39,10 @@ Auto-download from a cloud torrent provider (Seedr) and save in a folder (expose
 - Anything in the folder list from `config.yaml` will be automatically downloaded to a matching local folder under the `DlRoot` path
 - Additional features planned
   - Auto deletion from Seedr once download completes (coming soon)
+
+
+## TO DO
+
+- Retry downloads if there is an API error. Currently, an error will not result in a download and instead will continue on, deleting the source file. This means you will have to manually re-add things to Seedr on occasion. 
+- Better error handling in general. I always put this off even though I know better. 
+- Refactor the download function - create a download queue that will be parsed through. This would allow and additional feature of auto-adding shows from ShowRSS directly to the correct folder. Currently, new episodes are added to Seedr, but you manually have to move them to the correct folder. Like an animal. 
