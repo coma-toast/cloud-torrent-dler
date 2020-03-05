@@ -1,6 +1,6 @@
 # cloud-torrent-dler
 
-Auto-download from a cloud torrent provider (Seedr) and save in a folder (exposed to Plex, for example)
+Auto-download from a cloud torrent provider (Seedr) and save in a folder (exposed to Plex, for example). Roll your own streaming service!
 
 ## Installation
 
@@ -37,8 +37,10 @@ Auto-download from a cloud torrent provider (Seedr) and save in a folder (expose
 - There is no way to programmatically do this without a paid Seedr account :(
 - New episodes added to your ShowRSS feed will have the magnet automatically added to Seedr.
 - Anything in the folder list from `config.yaml` will be automatically downloaded to a matching local folder under the `DlRoot` path
+- This means that, currently, you will still have to periodically check Seedr and move downloaded files to the appropriate folders.
 - Additional features planned
-  - Auto deletion from Seedr once download completes (coming soon)
+  - Automatically move episodes added via the ShowRSS function to the correct subfolder. This will allow full automation for TV episodes
+  - Figuring out how do to something similar for movies.
 
 
 ## TO DO
