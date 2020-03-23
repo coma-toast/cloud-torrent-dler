@@ -79,6 +79,7 @@ func main() {
 	for range time.NewTicker(time.Minute * 1).C {
 		fmt.Println("Tick...")
 		deleteQueue := make(map[string]int)
+	outerLoop:
 		for _, downloadFolder := range conf.CompletedFolders {
 			list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
 			if err != nil {
@@ -98,6 +99,7 @@ func main() {
 							err = selectedSeedr.Get(item, conf.DlRoot)
 							if err != nil {
 								fmt.Println(err)
+								break outerLoop
 							}
 						}
 					}
