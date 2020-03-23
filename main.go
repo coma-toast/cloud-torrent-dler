@@ -83,7 +83,7 @@ func main() {
 		for _, downloadFolder := range conf.CompletedFolders {
 			list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
 			if err != nil {
-				panic(err)
+				fmt.Println(err)
 			}
 
 			for _, item := range list {
