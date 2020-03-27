@@ -81,6 +81,7 @@ func main() {
 		deleteQueue := make(map[string]int)
 	outerLoop:
 		for _, downloadFolder := range conf.CompletedFolders {
+			okToDeleteFolder := true
 			list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
 			if err != nil {
 				fmt.Println(err)
@@ -99,16 +100,19 @@ func main() {
 							err = selectedSeedr.Get(item, conf.DlRoot)
 							if err != nil {
 								fmt.Println(err)
+								okToDeleteFolder = false
 								break outerLoop
 							}
 						}
 					}
 				}
 				if conf.DeleteAfterDownload {
-					fmt.Println("Deleting item: " + item.Name)
-					err = selectedSeedr.DeleteFile(item.SeedrID)
-					if err != nil {
-						fmt.Println(err)
+					if okToDeleteFolder {
+						fmt.Println("Deleting item: " + item.Name)
+						err = selectedSeedr.DeleteFile(item.SeedrID)
+						if err != nil {
+							fmt.Println(err)
+						}
 					}
 				}
 
