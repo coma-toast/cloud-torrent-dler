@@ -107,16 +107,17 @@ func main() {
 					}
 				}
 				if conf.DeleteAfterDownload {
-					if okToDeleteFolder {
-						fmt.Println("Deleting item: " + item.Name)
-						err = selectedSeedr.DeleteFile(item.SeedrID)
-						if err != nil {
-							fmt.Println(err)
-						}
+					fmt.Println("Deleting item: " + item.Name)
+					err = selectedSeedr.DeleteFile(item.SeedrID)
+					if err != nil {
+						fmt.Println(err)
+
 					}
 				}
+				if okToDeleteFolder {
 
-				deleteQueue[item.FolderPath] = item.ParentSeedrID
+					deleteQueue[item.FolderPath] = item.ParentSeedrID
+				}
 			}
 		}
 		deleteTheQueue(selectedSeedr, deleteQueue)
