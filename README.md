@@ -45,6 +45,5 @@ Auto-download from a cloud torrent provider (Seedr) and save in a folder (expose
 
 ## TO DO
 
-- Retry downloads if there is an API error. Currently, an error will not result in a download and instead will continue on, deleting the source file. This means you will have to manually re-add things to Seedr on occasion. 
 - Better error handling in general. I always put this off even though I know better. 
 - Refactor the download function - create a download queue that will be parsed through. This would allow and additional feature of auto-adding shows from ShowRSS directly to the correct folder. Currently, new episodes are added to Seedr, but you manually have to move them to the correct folder. Like an animal. 
