@@ -96,11 +96,11 @@ func main() {
 					_, err = os.Stat(localPath + item.Name)
 					if err != nil {
 						if os.IsNotExist(err) {
-							fmt.Printf("Downloading item: %s\n", item.Name)
 							err = selectedSeedr.Get(item, conf.DlRoot)
 							if err != nil {
 								fmt.Println(err)
 								okToDeleteFolder = false
+								delete(deleteQueue, item.FolderPath)
 								break outerLoop
 							}
 						}
@@ -115,7 +115,6 @@ func main() {
 					}
 				}
 				if okToDeleteFolder {
-
 					deleteQueue[item.FolderPath] = item.ParentSeedrID
 				}
 			}
