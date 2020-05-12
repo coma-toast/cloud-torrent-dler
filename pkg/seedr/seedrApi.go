@@ -2,6 +2,7 @@ package seedr
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 
 	"github.com/davecgh/go-spew/spew"
@@ -71,7 +72,9 @@ func (c Client) DownloadFileByID(id int, destination string) error {
 
 func (c Client) downloadFile(url string, destination string) error {
 	var err error
+	io.Copy(destination)
 	responseBytes, err := c.call("GET", url, nil, nil)
+
 	if err != nil {
 		return err
 	}
