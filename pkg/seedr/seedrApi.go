@@ -3,6 +3,7 @@ package seedr
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
@@ -21,14 +22,14 @@ type Service interface {
 // DeleteFolder deletes a folder from Seedr
 func (c Client) DeleteFolder(id int) error {
 	url := fmt.Sprintf("/folder/%d", id)
-	_, err := c.call("DELETE", url, nil, nil)
+	_, err := c.call(http.MethodDelete, url, nil, nil)
 	return err
 }
 
 // DeleteFile deletes a file from Seedr
 func (c Client) DeleteFile(id int) error {
 	url := fmt.Sprintf("/file/%d", id)
-	_, err := c.call("DELETE", url, nil, nil)
+	_, err := c.call(http.MethodDelete, url, nil, nil)
 	return err
 }
 
@@ -39,7 +40,7 @@ func (c Client) GetFolder(id int) (Folder, error) {
 	if id != 0 {
 		url = fmt.Sprintf("%s/%d", url, id)
 	}
-	_, err := c.call("GET", url, nil, &folder)
+	_, err := c.call(http.MethodGet, url, nil, &folder)
 	if err != nil {
 		return Folder{}, err
 	}
@@ -51,7 +52,7 @@ func (c Client) GetFolder(id int) (Folder, error) {
 func (c Client) GetFile(id int) (File, error) {
 	var file File
 	url := fmt.Sprintf("/%d", id)
-	_, err := c.call("GET", url, nil, &file)
+	_, err := c.call(http.MethodGet, url, nil, &file)
 	if err != nil {
 		return File{}, err
 	}
@@ -78,7 +79,7 @@ func (c Client) downloadFile(url string, destination string) error {
 		spew.Dump("downloadFile() error: ", err)
 		return err
 	}
-	response, err := c.stream("GET", url, nil)
+	response, err := c.stream(http.MethodGet, url, nil)
 	defer response.Body.Close()
 	if err != nil {
 		spew.Dump("downloadFile() error: ", err)
@@ -99,7 +100,7 @@ func (c Client) downloadFile(url string, destination string) error {
 func (c Client) AddMagnet(magnet string) error {
 	var err error
 	url := fmt.Sprintf("/torrent/magnet")
-	result, err := c.call("POST", url, magnet, nil)
+	result, err := c.call(http.MethodPost, url, magnet, nil)
 	spew.Dump("Result: ", result)
 	return err
 }

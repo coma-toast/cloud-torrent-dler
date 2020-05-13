@@ -49,7 +49,7 @@ func (c *Client) stream(method string, url string, payload interface{}) (*http.R
 	var postData string
 
 	if payload != nil {
-		if method == "POST" {
+		if method == http.MethodPost {
 			postData = fmt.Sprintf("------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"magnet\"\r\n\r\n%s\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--", payload)
 		}
 	}
@@ -61,7 +61,7 @@ func (c *Client) stream(method string, url string, payload interface{}) (*http.R
 		return resp, err
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return &http.Response{}, errors.New("HTTP error occurred. Status code: " + strconv.Itoa(resp.StatusCode))
 	}
 	spew.Dump(resp.StatusCode)
@@ -83,7 +83,7 @@ func (c *Client) call(method string, url string, payload interface{}, target int
 	var postData string
 
 	if payload != nil {
-		if method == "POST" {
+		if method == http.MethodPost {
 			postData = fmt.Sprintf("------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"magnet\"\r\n\r\n%s\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--", payload)
 		}
 	}
