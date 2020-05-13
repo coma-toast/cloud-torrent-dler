@@ -3,7 +3,7 @@ package seedr
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 
 	"github.com/davecgh/go-spew/spew"
 )
@@ -72,14 +72,27 @@ func (c Client) DownloadFileByID(id int, destination string) error {
 
 func (c Client) downloadFile(url string, destination string) error {
 	var err error
-	io.Copy(destination)
-	responseBytes, err := c.call("GET", url, nil, nil)
-
+	f, err := os.Create(destination)
+	defer f.Close()
 	if err != nil {
+		spew.Dump("downloadFile() error: ", err)
+		return err
+	}
+	response, err := c.stream("GET", url, nil)
+	defer response.Body.Close()
+	if err != nil {
+		spew.Dump("downloadFile() error: ", err)
 		return err
 	}
 
-	return ioutil.WriteFile(destination, responseBytes, 0644)
+	bytes, err := io.Copy(f, response.Body)
+	if err != nil {
+		spew.Dump("downloadFile() error: ", err)
+		return err
+	}
+	spew.Dump("bytes written: :", bytes)
+
+	return err
 }
 
 //AddMagnet adds a magnet link to Seedr to be downloaded
