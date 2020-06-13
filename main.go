@@ -66,8 +66,8 @@ func main() {
 	go func() {
 		checkNewEpisodes(selectedSeedr)
 		// ticker to control how often the loop runs
-		// for range time.NewTicker(time.Second * 10).C { // * dev code
-		for range time.NewTicker(time.Minute * 1).C {
+		for range time.NewTicker(time.Second * 10).C { // * dev code
+			// for range time.NewTicker(time.Minute * 1).C {
 			checkNewEpisodes(selectedSeedr)
 		}
 	}()
@@ -75,8 +75,8 @@ func main() {
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 
 	// downloadWorker()
-	// for range time.NewTicker(time.Second * 5).C { // * dev code
-	for range time.NewTicker(time.Minute * 1).C {
+	for range time.NewTicker(time.Second * 5).C { // * dev code
+		// for range time.NewTicker(time.Minute * 1).C {
 		fmt.Println("Tick...")
 		deleteQueue := make(map[string]int)
 	outerLoop:
