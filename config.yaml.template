@@ -1,12 +1,14 @@
-# Root of the local download folder (probably your Plex TV Shows folder)
+# Root of the local destination folder (probably your Plex TV Shows library folder)
 DlRoot: "/path"
-# PID file temp file path (just a temp file - put it in $HOME?)
+# PID file temp file path (just a temp file - put it in $HOME, ./tmp or similar temp location)
 PidFilePath: "/path"
-# Where should cache.json live? (I use $HOME)
+# Where should cache.json live? (I use $HOME, ./tmp or similar temp location)
+# If there is an issue and you need to re-download something, you can remove that item from the cache and it will re-download again
 CachePath: "/home/username/cache.json"
-# Array of folders to monitor for completed downloads. Subfolders here will map to subfolders in DlRoot
-# NOTE: Multiple folders do no work in this pre-release version - only put 1 here for now
-CompletedFolders: ["Completed/Kids", "Completed/NotKids"]
+# Array of folders to monitor for completed downloads. Subfolders here will map to subfolders in DlRoot.
+# NOTE: the first folder in this list MUST be the folder for TV Shows - autodownloading of shows picks the first item in the array
+CompletedFolders: ["Shows","Movies/Kids", "Movies/NotKids"]
+# This is your Seedr credentials - a paid account is required for API access
 Username: "username"
 Passwd: "password"
 # URL to your ShowRSS.info feed
@@ -14,3 +16,5 @@ ShowRSS: "http://showrss.info/user/XXXXXXXX.rss?magnets=true&namespaces=true&nam
 # How we control for which download method to use (API only verified for this version)
 UseAPI: true
 UseFTP: false
+# Debugging option - delete from Seedr after the download finishes
+DeleteAfterDownload: true
