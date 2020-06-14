@@ -79,6 +79,40 @@ func main() {
 		// for range time.NewTicker(time.Minute * 1).C {
 		fmt.Println("Tick...")
 		deleteQueue := make(map[string]int)
+		unsortedItems, err := findAllToDownload(selectedSeedr, "/", conf.UseFTP)
+		if err != nil {
+			fmt.Println(err)
+		}
+		for _, unsortedItem := range unsortedItems {
+			okToDeleteFolder := true
+			isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", unsortedItem.Name)
+			if isAVideo {
+				setCacheSeedrInfo(selectedSeedr, conf.CompletedFolders[0], &unsortedItem)
+				localPath := fmt.Sprintf("%s/%s/", conf.DlRoot, unsortedItem.FolderPath)
+				_, err = os.Stat(localPath + unsortedItem.Name)
+				if err != nil {
+					if os.IsNotExist(err) {
+						err = selectedSeedr.Get(unsortedItem, conf.DlRoot+"/"+conf.CompletedFolders[0])
+						if err != nil {
+							fmt.Println(err)
+							okToDeleteFolder = false
+							delete(deleteQueue, unsortedItem.FolderPath)
+						}
+					}
+				}
+			}
+			if conf.DeleteAfterDownload {
+				fmt.Println("Deleting item: " + unsortedItem.Name)
+				err = selectedSeedr.DeleteFile(unsortedItem.SeedrID)
+				if err != nil {
+					fmt.Println(err)
+
+				}
+			}
+			if okToDeleteFolder {
+				deleteQueue[unsortedItem.FolderPath] = unsortedItem.ParentSeedrID
+			}
+		}
 	outerLoop:
 		for _, downloadFolder := range conf.CompletedFolders {
 			okToDeleteFolder := true
