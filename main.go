@@ -66,8 +66,8 @@ func main() {
 	go func() {
 		checkNewEpisodes(selectedSeedr)
 		// ticker to control how often the loop runs
-		for range time.NewTicker(time.Second * 10).C { // * dev code
-			// for range time.NewTicker(time.Minute * 1).C {
+		// for range time.NewTicker(time.Second * 10).C { // * dev code
+		for range time.NewTicker(time.Minute * 1).C {
 			checkNewEpisodes(selectedSeedr)
 		}
 	}()
@@ -75,38 +75,44 @@ func main() {
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 
 	// downloadWorker()
-	for range time.NewTicker(time.Second * 5).C { // * dev code
-		// for range time.NewTicker(time.Minute * 1).C {
+	// for range time.NewTicker(time.Second * 5).C { // * dev code
+	for range time.NewTicker(time.Minute * 1).C {
 		fmt.Println("Tick...")
 		deleteQueue := make(map[string]int)
-		unsortedItems, err := findAllToDownload(selectedSeedr, "/", conf.UseFTP)
+		unsortedItems, err := findAllToDownload(selectedSeedr, "", conf.UseFTP)
 		if err != nil {
 			fmt.Println(err)
 		}
+	unsortedLoop:
 		for _, unsortedItem := range unsortedItems {
-			okToDeleteFolder := true
+			okToDeleteFolder := false
 			isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", unsortedItem.Name)
 			if isAVideo {
 				setCacheSeedrInfo(selectedSeedr, conf.CompletedFolders[0], &unsortedItem)
-				localPath := fmt.Sprintf("%s/%s/", conf.DlRoot, unsortedItem.FolderPath)
-				_, err = os.Stat(localPath + unsortedItem.Name)
-				if err != nil {
-					if os.IsNotExist(err) {
-						err = selectedSeedr.Get(unsortedItem, conf.DlRoot+"/"+conf.CompletedFolders[0])
-						if err != nil {
-							fmt.Println(err)
-							okToDeleteFolder = false
-							delete(deleteQueue, unsortedItem.FolderPath)
+				if unsortedItem.ShowID != 0 {
+					fmt.Println("Show found and autodownloading. ShowID: ", unsortedItem.ShowID)
+					localPath := fmt.Sprintf("%s/%s/", conf.DlRoot, unsortedItem.FolderPath)
+					_, err = os.Stat(localPath + unsortedItem.Name)
+					if err != nil {
+						if os.IsNotExist(err) {
+							err = selectedSeedr.Get(unsortedItem, conf.DlRoot+"/"+conf.CompletedFolders[0])
+							if err != nil {
+								fmt.Println(err)
+								okToDeleteFolder = false
+								delete(deleteQueue, unsortedItem.FolderPath)
+								break unsortedLoop
+							}
+							okToDeleteFolder = true
 						}
 					}
-				}
-			}
-			if conf.DeleteAfterDownload {
-				fmt.Println("Deleting item: " + unsortedItem.Name)
-				err = selectedSeedr.DeleteFile(unsortedItem.SeedrID)
-				if err != nil {
-					fmt.Println(err)
+					if conf.DeleteAfterDownload {
+						fmt.Println("Deleting item: " + unsortedItem.Name)
+						err = selectedSeedr.DeleteFile(unsortedItem.SeedrID)
+						if err != nil {
+							fmt.Println(err)
 
+						}
+					}
 				}
 			}
 			if okToDeleteFolder {
