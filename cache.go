@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"regexp"
 	"strings"
 	"sync"
 
@@ -35,7 +33,9 @@ func (c *Cache) Initialize(path string) error {
 func (c *Cache) Set(key string, value DownloadItem) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	key = c.sanitizeString(key)
+	key = strings.ToLower(key)
+	key = strings.ReplaceAll(key, ".", " ")
+	key = strings.ReplaceAll(key, "-", " ")
 	c.state[key] = value
 	err := jsonIo.WriteFile(c.path, c.state)
 	if err != nil {
@@ -47,7 +47,9 @@ func (c *Cache) Set(key string, value DownloadItem) error {
 
 // Get retrieves data from the cache
 func (c *Cache) Get(key string) DownloadItem {
-	key = c.sanitizeString(key)
+	key = strings.ToLower(key)
+	key = strings.ReplaceAll(key, ".", " ")
+	key = strings.ReplaceAll(key, "-", " ")
 	fmt.Printf("Getting %s from cache\n", key)
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
@@ -56,22 +58,10 @@ func (c *Cache) Get(key string) DownloadItem {
 
 // IsSet determines if the item exists already
 func (c *Cache) IsSet(key string) bool {
-	key = c.sanitizeString(key)
+	key = strings.ToLower(key)
+	key = strings.ReplaceAll(key, ".", " ")
+	key = strings.ReplaceAll(key, "-", " ")
 	_, ok := c.state[key]
 
 	return ok
-}
-
-func (c *Cache) sanitizeString(input string) string {
-	input = strings.ToLower(input)
-	regex, err := regexp.Compile("[^a-z0-9\\s]+")
-	if err != nil {
-		log.Println(err)
-	}
-
-	output := regex.ReplaceAllString(input, "")
-	fmt.Println("input", input)
-	fmt.Println("output", output)
-
-	return output
 }
