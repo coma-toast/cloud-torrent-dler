@@ -17,9 +17,10 @@ Auto-download from a cloud torrent provider (Seedr) and save in a folder (expose
 - `cp config.yaml.template config.yaml`
 - edit `config.yaml` with your parameters
 - make folders in Seedr to match your local folder structure
+- first item in the array must be your folder for tv shows
 - For example:
   - Seedr Folders:
-    - `["Movies/Kids", "Movies/Not Kids", "Shows"]`
+    - `["Shows", "Movies/Kids", "Movies/Not Kids"]`
   - Local folders would have to match:
   - `/media/DataDrive/`
     - `Shows/`
@@ -46,4 +47,4 @@ Auto-download from a cloud torrent provider (Seedr) and save in a folder (expose
 ## TO DO
 
 - Better error handling in general. I always put this off even though I know better. 
-- Refactor the download function - create a download queue that will be parsed through. This would allow and additional feature of auto-adding shows from ShowRSS directly to the correct folder. Currently, new episodes are added to Seedr, but you manually have to move them to the correct folder. Like an animal. 
+- Refactor the download function - create a download queue that will be parsed through. 
