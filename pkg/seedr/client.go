@@ -42,6 +42,25 @@ func (c *Client) stream(method string, url string, payload interface{}) (*http.R
 	}
 	url = baseURL + url
 	if c.client == nil {
+		// ! An error that keeps happening in production I believe is here. Or at least this function
+		// Tick...
+		// Getting vampirina s02e22 hdtv x264 w4f from cache
+		// Deleting item: RARBG.txt
+		// Deleting item: RARBG_DO_NOT_MIRROR.exe
+		// Getting vampirina s02e22 hdtv x264 w4f from cache
+		// Downloading item: vampirina.s02e22.hdtv.x264-w4f.mkv to /media/USB-Drive/Shows/Kids/Vampirina S02E22 HDTV x264 W4F
+		// panic: runtime error: invalid memory address or nil pointer dereference
+		// [signal SIGSEGV: segmentation violation code=0x1 addr=0x0 pc=0x70fcd8]
+
+		// goroutine 1 [running]:
+		// gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/seedr.Client.downloadFile(0xc0001642d0, 0xc0000bb5e0, 0x12, 0xc0000bb640, 0x14, 0xc000336440, 0x34, 0xc0003941b0, 0xf, 0xc000086180, ...)
+		//         /home/jason/git/cloud-torrent-dler/pkg/seedr/seedrApi.go:83 +0x208
+		// gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/seedr.Client.DownloadFileByID(0x0, 0xc0000bb5e0, 0x12, 0xc0000bb640, 0x14, 0x0, 0x0, 0x29d2ac50, 0xc000086180, 0x5d, ...)
+		//         /home/jason/git/cloud-torrent-dler/pkg/seedr/seedrApi.go:66 +0xeb
+		// main.(*SeedrAPI).Get(0xc0001641e0, 0x0, 0xc0002e0c00, 0x29, 0x0, 0xc0002e0de0, 0x22, 0x81c110e, 0x29d2ac50, 0x0, ...)
+		//         /home/jason/git/cloud-torrent-dler/api.go:109 +0x38e
+		// main.main()
+		//         /home/jason/git/cloud-torrent-dler/main.go:139 +0xb98
 		c.client = &http.Client{}
 	}
 	// TODO: throw error if >= than 400
