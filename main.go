@@ -133,9 +133,9 @@ func main() {
 				if isAVideo {
 					setCacheSeedrInfo(selectedSeedr, downloadFolder, &item)
 					localPath := fmt.Sprintf("%s/%s/", conf.DlRoot, item.FolderPath)
-					_, err = os.Stat(localPath + item.Name)
+					currentFile, err := os.Stat(localPath + item.Name)
 					if err != nil {
-						if os.IsNotExist(err) {
+						if os.IsNotExist(err) || currentFile.Size() == 0 {
 							err = selectedSeedr.Get(item, conf.DlRoot)
 							if err != nil {
 								fmt.Println(err)

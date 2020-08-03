@@ -76,19 +76,19 @@ func (c Client) downloadFile(url string, destination string) error {
 	f, err := os.Create(destination)
 	defer f.Close()
 	if err != nil {
-		spew.Dump("downloadFile() error: ", err)
+		spew.Dump("Error in downloadFile() creating destination file: ", err)
 		return err
 	}
 	response, err := c.stream(http.MethodGet, url, nil)
 	defer response.Body.Close()
 	if err != nil {
-		spew.Dump("downloadFile() error: ", err)
+		spew.Dump("Error in downloadFile() getting stream: ", err)
 		return err
 	}
 
 	bytes, err := io.Copy(f, response.Body)
 	if err != nil {
-		spew.Dump("downloadFile() error: ", err)
+		spew.Dump("Error in downloadFile() copying to destination: ", err)
 		return err
 	}
 	spew.Dump("bytes written: :", bytes)
