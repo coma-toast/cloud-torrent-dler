@@ -19,6 +19,7 @@ type config struct {
 	UseFTP              bool
 	UseAPI              bool
 	DeleteAfterDownload bool
+	DevMode             bool
 }
 
 func (c config) GetSeedrInstance() SeedrInstance {

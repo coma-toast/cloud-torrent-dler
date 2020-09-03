@@ -74,9 +74,12 @@ func main() {
 
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 
+	var loopTime = time.Second * 300
+	if conf.DevMode {
+		loopTime = time.Second * 5
+	}
 	// downloadWorker()
-	// for range time.NewTicker(time.Second * 5).C { // * dev code
-	for range time.NewTicker(time.Minute * 1).C {
+	for range time.NewTicker(loopTime).C {
 		fmt.Println("Tick...")
 		deleteQueue := make(map[string]int)
 		unsortedItems, err := findAllToDownload(selectedSeedr, "", conf.UseFTP)
@@ -128,22 +131,24 @@ func main() {
 			}
 
 			for _, item := range list {
-				// isAVideo, _ := regexp.MatchString("(.*?).(txt|jpg)$", item.Name) // * dev code
 				isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", item.Name)
+				if conf.DevMode {
+					// * dev code so you don't download huge files during testing
+					isAVideo, _ = regexp.MatchString("(.*?).(txt|jpg)$", item.Name)
+				}
 				if isAVideo {
 					setCacheSeedrInfo(selectedSeedr, downloadFolder, &item)
 					localPath := fmt.Sprintf("%s/%s/", conf.DlRoot, item.FolderPath)
-					_, err = os.Stat(localPath + item.Name)
-					if err != nil {
-						if os.IsNotExist(err) {
-							err = selectedSeedr.Get(item, conf.DlRoot)
-							if err != nil {
-								fmt.Println(err)
-								okToDeleteFolder = false
-								delete(deleteQueue, item.FolderPath)
-								break outerLoop
-							}
+					thisShouldBeDownloaded := shouldThisBeDownloaded(localPath + item.Name)
+					if thisShouldBeDownloaded {
+						err = selectedSeedr.Get(item, conf.DlRoot)
+						if err != nil {
+							fmt.Println(err)
+							okToDeleteFolder = false
+							delete(deleteQueue, item.FolderPath)
+							break outerLoop
 						}
+
 					}
 				}
 				if conf.DeleteAfterDownload {
@@ -167,12 +172,14 @@ func main() {
 }
 
 func deleteTheQueue(selectedSeedr SeedrInstance, deleteQueue map[string]int) {
-	for name, id := range deleteQueue {
-		fmt.Println("Deleting folder: " + name)
-		var err error
-		err = selectedSeedr.DeleteFolder(id)
-		if err != nil {
-			fmt.Println(err)
+	if conf.DeleteAfterDownload {
+		for name, id := range deleteQueue {
+			fmt.Println("Deleting folder: " + name)
+			var err error
+			err = selectedSeedr.DeleteFolder(id)
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
 	}
 }
@@ -236,6 +243,21 @@ func getShowIDFromEpisodeID(episode int, allShows showrss.Shows) (int, error) {
 	err := fmt.Errorf("unable to find ShowID for EpisodeID: %d", episode)
 
 	return 0, err
+}
+
+func shouldThisBeDownloaded(filepath string) bool {
+	currentFile, err := os.Stat(filepath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return true
+		}
+	} else {
+		if currentFile.Size() == 0 {
+			return true
+		}
+	}
+
+	return false
 }
 
 // AddMagnet adds a magnet link to Seedr for downloading
