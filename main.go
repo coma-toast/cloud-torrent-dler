@@ -62,24 +62,28 @@ func main() {
 
 	// Channel so we can continuously monitor new episodes being added to showrss
 	dontExit := make(chan bool)
+	var episodeLoopTime = time.Second * 60
+	if conf.DevMode {
+		episodeLoopTime = time.Second * 5
+	}
 
 	go func() {
 		checkNewEpisodes(selectedSeedr)
 		// ticker to control how often the loop runs
 		// for range time.NewTicker(time.Second * 10).C { // * dev code
-		for range time.NewTicker(time.Minute * 1).C {
+		for range time.NewTicker(episodeLoopTime).C {
 			checkNewEpisodes(selectedSeedr)
 		}
 	}()
 
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 
-	var loopTime = time.Second * 300
+	var downloadLoopTime = time.Second * 300
 	if conf.DevMode {
-		loopTime = time.Second * 5
+		downloadLoopTime = time.Second * 10
 	}
 	// downloadWorker()
-	for range time.NewTicker(loopTime).C {
+	for range time.NewTicker(downloadLoopTime).C {
 		fmt.Println("Tick...")
 		deleteQueue := make(map[string]int)
 		unsortedItems, err := findAllToDownload(selectedSeedr, "", conf.UseFTP)
