@@ -35,6 +35,7 @@ type DownloadItem struct {
 	FolderPath    string
 	IsDir         bool
 	Name          string
+	TVShowName    string
 	ParentSeedrID int
 	SeedrID       int
 	ShowID        int
@@ -93,12 +94,12 @@ func main() {
 			if isAVideo {
 				setCacheSeedrInfo(selectedSeedr, conf.CompletedFolders[0], &unsortedItem)
 				if unsortedItem.ShowID != 0 {
-					fmt.Println("Show found and autodownloading. ShowID: ", unsortedItem.ShowID)
-					localPath := fmt.Sprintf("%s/%s/", conf.DlRoot, unsortedItem.FolderPath)
-					_, err = os.Stat(localPath + unsortedItem.Name)
+					fmt.Println("Show found and autodownloading. ", unsortedItem.TVShowName)
+					path := fmt.Sprintf("%s/%s/%s/%s/%s", conf.DlRoot, conf.CompletedFolders[0], unsortedItem.TVShowName, unsortedItem.FolderPath, unsortedItem.Name)
+					_, err = os.Stat(path)
 					if err != nil {
 						if os.IsNotExist(err) {
-							err = selectedSeedr.Get(unsortedItem, conf.DlRoot+"/"+conf.CompletedFolders[0])
+							err = selectedSeedr.Get(unsortedItem, fmt.Sprintf("%s/%s", conf.DlRoot, path))
 							if err != nil {
 								fmt.Println(err)
 								okToDeleteFolder = false

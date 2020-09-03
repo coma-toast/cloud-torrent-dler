@@ -99,14 +99,14 @@ func (s *SeedrAPI) List(path string) ([]DownloadItem, error) {
 // Get downloads the file name
 func (s *SeedrAPI) Get(item DownloadItem, destination string) error {
 	var err error
-	fmt.Printf("Downloading item: %s to %s\n", item.Name, destination+"/"+item.FolderPath)
+	fmt.Printf("Downloading item: %s to %s\n", item.Name, destination)
 	// Local parent folder
-	path := fmt.Sprintf("%s/%s", destination, item.FolderPath)
+	// path := fmt.Sprintf("%s/%s", destination, item.FolderPath)
 	// Make the local parent folder
-	os.MkdirAll(path, 0777)
+	os.MkdirAll(destination, 0777)
 	// Full local path
-	path = fmt.Sprintf("%s/%s", path, item.Name)
-	err = s.client.DownloadFileByID(item.SeedrID, path)
+	// path := fmt.Sprintf("%s/%s", destination, item.Name)
+	err = s.client.DownloadFileByID(item.SeedrID, destination)
 	if err != nil {
 		return err
 	}
