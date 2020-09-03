@@ -99,8 +99,8 @@ func main() {
 				setCacheSeedrInfo(selectedSeedr, conf.CompletedFolders[0], &unsortedItem)
 				if unsortedItem.ShowID != 0 {
 					fmt.Println("Show found and autodownloading. ", unsortedItem.TVShowName)
-					path := fmt.Sprintf("%s/%s/%s/%s/%s", conf.DlRoot, conf.CompletedFolders[0], unsortedItem.TVShowName, unsortedItem.FolderPath, unsortedItem.Name)
-					_, err = os.Stat(path)
+					path := fmt.Sprintf("%s/%s/%s/%s", conf.DlRoot, conf.CompletedFolders[0], unsortedItem.TVShowName, unsortedItem.FolderPath)
+					_, err = os.Stat(path + unsortedItem.Name)
 					if err != nil {
 						if os.IsNotExist(err) {
 							err = selectedSeedr.Get(unsortedItem, fmt.Sprintf("%s/%s", conf.DlRoot, path))
@@ -146,7 +146,7 @@ func main() {
 					localPath := fmt.Sprintf("%s/%s/", conf.DlRoot, item.FolderPath)
 					thisShouldBeDownloaded := shouldThisBeDownloaded(localPath + item.Name)
 					if thisShouldBeDownloaded {
-						err = selectedSeedr.Get(item, localPath+item.Name)
+						err = selectedSeedr.Get(item, localPath)
 						if err != nil {
 							fmt.Println(err)
 							okToDeleteFolder = false
