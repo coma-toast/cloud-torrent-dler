@@ -146,7 +146,7 @@ func main() {
 					localPath := fmt.Sprintf("%s/%s/", conf.DlRoot, item.FolderPath)
 					thisShouldBeDownloaded := shouldThisBeDownloaded(localPath + item.Name)
 					if thisShouldBeDownloaded {
-						err = selectedSeedr.Get(item, conf.DlRoot)
+						err = selectedSeedr.Get(item, localPath+item.Name)
 						if err != nil {
 							fmt.Println(err)
 							okToDeleteFolder = false
