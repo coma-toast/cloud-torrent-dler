@@ -105,8 +105,8 @@ func (s *SeedrAPI) Get(item DownloadItem, destination string) error {
 	// Make the local parent folder
 	os.MkdirAll(destination, 0777)
 	// Full local path
-	// path := fmt.Sprintf("%s/%s", destination, item.Name)
-	err = s.client.DownloadFileByID(item.SeedrID, destination)
+	path := fmt.Sprintf("%s/%s", destination, item.Name)
+	err = s.client.DownloadFileByID(item.SeedrID, path)
 	if err != nil {
 		return err
 	}
