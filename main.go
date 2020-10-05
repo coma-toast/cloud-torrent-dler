@@ -103,7 +103,7 @@ func main() {
 					_, err = os.Stat(path + unsortedItem.Name)
 					if err != nil {
 						if os.IsNotExist(err) {
-							err = selectedSeedr.Get(unsortedItem, fmt.Sprintf("%s/%s", conf.DlRoot, path))
+							err = selectedSeedr.Get(unsortedItem, path)
 							if err != nil {
 								fmt.Println(err)
 								okToDeleteFolder = false
