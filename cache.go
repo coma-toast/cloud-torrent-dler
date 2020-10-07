@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/jsonIo"
@@ -33,9 +32,9 @@ func (c *Cache) Initialize(path string) error {
 func (c *Cache) Set(key string, value DownloadItem) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	key = strings.ToLower(key)
-	key = strings.ReplaceAll(key, ".", " ")
-	key = strings.ReplaceAll(key, "-", " ")
+	// key = strings.ToLower(key)
+	// key = strings.ReplaceAll(key, ".", " ")
+	// key = strings.ReplaceAll(key, "-", " ")
 	c.state[key] = value
 	err := jsonIo.WriteFile(c.path, c.state)
 	if err != nil {
@@ -47,9 +46,9 @@ func (c *Cache) Set(key string, value DownloadItem) error {
 
 // Get retrieves data from the cache
 func (c *Cache) Get(key string) DownloadItem {
-	key = strings.ToLower(key)
-	key = strings.ReplaceAll(key, ".", " ")
-	key = strings.ReplaceAll(key, "-", " ")
+	// key = strings.ToLower(key)
+	// key = strings.ReplaceAll(key, ".", " ")
+	// key = strings.ReplaceAll(key, "-", " ")
 	fmt.Printf("Getting %s from cache\n", key)
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
@@ -58,9 +57,9 @@ func (c *Cache) Get(key string) DownloadItem {
 
 // IsSet determines if the item exists already
 func (c *Cache) IsSet(key string) bool {
-	key = strings.ToLower(key)
-	key = strings.ReplaceAll(key, ".", " ")
-	key = strings.ReplaceAll(key, "-", " ")
+	// key = strings.ToLower(key)
+	// key = strings.ReplaceAll(key, ".", " ")
+	// key = strings.ReplaceAll(key, "-", " ")
 	_, ok := c.state[key]
 
 	return ok
