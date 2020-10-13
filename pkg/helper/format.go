@@ -18,6 +18,8 @@ func SanitizeText(input string) string {
 	output = strings.ReplaceAll(output, "  ", " ")
 	// Sometimes it's H.264, sometimes it's H264. Why??
 	output = strings.ReplaceAll(output, "h 264", "h264")
+	// Sometimes it's h264, sometimes it's x264. Why???
+	output = strings.ReplaceAll(output, "x264", "h264")
 
 	return output
 }
