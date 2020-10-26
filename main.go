@@ -63,7 +63,7 @@ func main() {
 
 	// Channel so we can continuously monitor new episodes being added to showrss
 	dontExit := make(chan bool)
-	var episodeLoopTime = time.Second * 60
+	var episodeLoopTime = time.Second * time.Duration(conf.CheckEpisodesTimer)
 	if conf.DevMode {
 		episodeLoopTime = time.Second * 5
 	}
@@ -79,7 +79,7 @@ func main() {
 
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 
-	var downloadLoopTime = time.Second * 300
+	var downloadLoopTime = time.Second * time.Duration(conf.CheckFilesToDownloadTimer)
 	if conf.DevMode {
 		downloadLoopTime = time.Second * 10
 	}
