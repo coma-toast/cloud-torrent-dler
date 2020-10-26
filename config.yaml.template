@@ -18,5 +18,9 @@ UseAPI: true
 UseFTP: false
 # Debugging option - delete from Seedr after the download finishes
 DeleteAfterDownload: true
-# Dev mode - 5 second loops
+# How long to wait before checking for episodes
+CheckEpisodesTimer: 300
+# How long to wait before checking for downloads
+CheckFilesToDownloadTimer: 300
+# Dev mode - 5 second loops, download text files instead of video files
 DevMode: false
