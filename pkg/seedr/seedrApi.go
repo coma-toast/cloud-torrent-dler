@@ -75,14 +75,12 @@ func (c Client) DownloadFileByID(id int, destination string) error {
 func (c Client) downloadFile(url string, destination string) error {
 	var err error
 	f, err := os.Create(destination)
-	fmt.Println("just passed create")
 	defer f.Close()
 	if err != nil {
 		spew.Dump("Error in downloadFile() creating destination file: ", err)
 		return err
 	}
 	response, err := c.stream(http.MethodGet, url, nil)
-	fmt.Println("just passed stream")
 	defer response.Body.Close()
 	if err != nil {
 		spew.Dump("Error in downloadFile() getting stream: ", err)
@@ -90,7 +88,6 @@ func (c Client) downloadFile(url string, destination string) error {
 	}
 
 	bytes, err := io.Copy(f, response.Body)
-	fmt.Println("just passed copy")
 	if err != nil {
 		spew.Dump("Error in downloadFile() copying to destination: ", err)
 		return err
