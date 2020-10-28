@@ -63,7 +63,7 @@ func main() {
 
 	// Channel so we can continuously monitor new episodes being added to showrss
 	dontExit := make(chan bool)
-	var episodeLoopTime = time.Second * 60
+	var episodeLoopTime = time.Second * time.Duration(conf.CheckEpisodesTimer)
 	if conf.DevMode {
 		episodeLoopTime = time.Second * 5
 	}
@@ -79,7 +79,7 @@ func main() {
 
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 
-	var downloadLoopTime = time.Second * 300
+	var downloadLoopTime = time.Second * time.Duration(conf.CheckFilesToDownloadTimer)
 	if conf.DevMode {
 		downloadLoopTime = time.Second * 10
 	}
@@ -143,7 +143,7 @@ func main() {
 				}
 				if isAVideo {
 					setCacheSeedrInfo(selectedSeedr, downloadFolder, &item)
-					localPath := fmt.Sprintf("%s/%s/", conf.DlRoot, item.FolderPath)
+					localPath := fmt.Sprintf("%s/%s", conf.DlRoot, item.FolderPath)
 					thisShouldBeDownloaded := shouldThisBeDownloaded(localPath + item.Name)
 					if thisShouldBeDownloaded {
 						err = selectedSeedr.Get(item, localPath)
@@ -188,6 +188,14 @@ func deleteTheQueue(selectedSeedr SeedrInstance, deleteQueue map[string]int) {
 		}
 	}
 }
+
+// func validateCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item *DownloadItem) error {
+// 	var err error
+// 	filename := item.Name
+// 	folderName := string(filename[0 : len(filename)-4])
+// 	cacheItem := cache.Get(folderName)
+
+// }
 
 func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item *DownloadItem) error {
 	var err error

@@ -63,6 +63,7 @@ func (c Client) GetFile(id int) (File, error) {
 func (c Client) DownloadFileByID(id int, destination string) error {
 	var err error
 	url := fmt.Sprintf("/file/%d", id)
+	spew.Dump(id, url, destination)
 	err = c.downloadFile(url, destination)
 	if err != nil {
 		return err
