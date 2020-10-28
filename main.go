@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"regexp"
 	"strings"
@@ -46,6 +47,7 @@ var cache = &Cache{}
 var dryRun = false
 
 func main() {
+	log.Println("Starting up...")
 	conf = getConf()
 	err := cache.Initialize(conf.CachePath)
 	if err != nil {
@@ -58,6 +60,7 @@ func main() {
 	pidPath := fmt.Sprintf("%s/cloud-torrent-downloader", conf.PidFilePath)
 	pid := pidcheck.AlreadyRunning(pidPath)
 	if pid {
+		log.Println("App already running. Exiting.")
 		os.Exit(1)
 	}
 
@@ -65,6 +68,7 @@ func main() {
 	dontExit := make(chan bool)
 	var episodeLoopTime = time.Second * time.Duration(conf.CheckEpisodesTimer)
 	if conf.DevMode {
+		log.Println("Dev mode enabled.")
 		episodeLoopTime = time.Second * 5
 	}
 
@@ -85,7 +89,6 @@ func main() {
 	}
 	// downloadWorker()
 	for range time.NewTicker(downloadLoopTime).C {
-		fmt.Println("Tick...")
 		deleteQueue := make(map[string]int)
 		unsortedItems, err := findAllToDownload(selectedSeedr, "", conf.UseFTP)
 		if err != nil {
@@ -98,7 +101,7 @@ func main() {
 			if isAVideo {
 				setCacheSeedrInfo(selectedSeedr, conf.CompletedFolders[0], &unsortedItem)
 				if unsortedItem.ShowID != 0 {
-					fmt.Println("Show found and autodownloading. ", unsortedItem.TVShowName)
+					log.Println("Show found and autodownloading. ", unsortedItem.TVShowName)
 					path := fmt.Sprintf("%s/%s/%s%s", conf.DlRoot, conf.CompletedFolders[0], unsortedItem.TVShowName, unsortedItem.FolderPath)
 					_, err = os.Stat(path + unsortedItem.Name)
 					if err != nil {
@@ -219,6 +222,7 @@ func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item 
 }
 
 func checkNewEpisodes(selectedSeedr SeedrInstance) {
+	log.Println("Checking ShowRSS for new episodes")
 	initializeMagnetList, err := getNewEpisodes(conf.ShowRSS)
 	if err != nil {
 		fmt.Println(err)
