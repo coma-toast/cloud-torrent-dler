@@ -122,7 +122,6 @@ func (c *Client) call(method string, url string, payload interface{}, target int
 	// TODO: ^ to here
 	if resp.StatusCode >= 400 {
 		err := fmt.Errorf("Seedr HTTP Error: %d", resp.StatusCode)
-		spew.Dump(resp.Status)
 		return responseBody, err
 	}
 

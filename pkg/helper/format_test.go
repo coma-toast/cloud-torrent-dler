@@ -42,6 +42,11 @@ func Test_sanitizeText(t *testing.T) {
 			args: args{input: "The.100.S07E13.1080p.CW.WEB-DL.AAC2.0.H.264-BTN"},
 			want: "the 100 s07e13 1080p cw aac2 0 h264 btn",
 		},
+		{
+			name: "[]",
+			args: args{input: "23.Walks.2020.1080p.WEB-DL.DD5.1.H.264-EVO[TGx]"},
+			want: "23 walks 2020 1080p dd5 1 h264 evotgx",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
