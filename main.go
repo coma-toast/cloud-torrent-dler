@@ -143,7 +143,7 @@ func main() {
 				}
 				if isAVideo {
 					setCacheSeedrInfo(selectedSeedr, downloadFolder, &item)
-					localPath := fmt.Sprintf("%s/%s/", conf.DlRoot, item.FolderPath)
+					localPath := fmt.Sprintf("%s/%s", conf.DlRoot, item.FolderPath)
 					thisShouldBeDownloaded := shouldThisBeDownloaded(localPath + item.Name)
 					if thisShouldBeDownloaded {
 						err = selectedSeedr.Get(item, localPath)
@@ -188,6 +188,14 @@ func deleteTheQueue(selectedSeedr SeedrInstance, deleteQueue map[string]int) {
 		}
 	}
 }
+
+// func validateCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item *DownloadItem) error {
+// 	var err error
+// 	filename := item.Name
+// 	folderName := string(filename[0 : len(filename)-4])
+// 	cacheItem := cache.Get(folderName)
+
+// }
 
 func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item *DownloadItem) error {
 	var err error
