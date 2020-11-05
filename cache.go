@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/helper"
-	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/jsonIo"
+	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/jsonio"
 )
 
 // Cache is the cache for storing episode lists
@@ -21,7 +21,7 @@ func (c *Cache) Initialize(path string) error {
 	c.mutex = &sync.Mutex{}
 	c.path = path
 	cache.state = make(map[string]DownloadItem)
-	err := jsonIo.ReadFile(path, &cache.state)
+	err := jsonio.ReadFile(path, &cache.state)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func (c *Cache) Set(key string, value DownloadItem) error {
 	defer c.mutex.Unlock()
 	key = helper.SanitizeText(key)
 	c.state[key] = value
-	err := jsonIo.WriteFile(c.path, c.state)
+	err := jsonio.WriteFile(c.path, c.state)
 	if err != nil {
 		return err
 	}
