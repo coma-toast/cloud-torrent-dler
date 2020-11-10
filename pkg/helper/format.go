@@ -9,6 +9,7 @@ import (
 // SanitizeText eliminates unnecessary formatting.
 func SanitizeText(input string) string {
 	output := sanitize.BaseName(input)
+	output = strings.ToLower(input)
 	output = replaceText(output)
 
 	return output
@@ -21,8 +22,7 @@ func SanitizePath(input string) string {
 }
 
 func replaceText(input string) string {
-	output := strings.ToLower(input)
-	output = strings.ReplaceAll(output, "-", " ")
+	output := strings.ReplaceAll(input, "-", " ")
 	// For some reason, a lot of file names don't quite match the magnet name - WEBRip in the magnet name is changed to webdl in the file name. Why?
 	output = strings.ReplaceAll(output, "webrip", "")
 	output = strings.ReplaceAll(output, "web dl", "")
