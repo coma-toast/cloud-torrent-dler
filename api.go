@@ -100,7 +100,7 @@ func (s *SeedrAPI) List(path string) ([]DownloadItem, error) {
 // Get downloads the file name
 func (s *SeedrAPI) Get(item DownloadItem, destination string) error {
 	var err error
-	destination = sanitize.BaseName(destination)
+	destination = sanitize.Name(destination)
 	fmt.Printf("Downloading item: %s to %s\n", item.Name, destination)
 	// Local parent folder
 	// path := fmt.Sprintf("%s/%s", destination, item.FolderPath)
