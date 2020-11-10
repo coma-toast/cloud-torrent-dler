@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kennygrant/sanitize"
+	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/helper"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/seedr"
 )
 
@@ -100,7 +100,7 @@ func (s *SeedrAPI) List(path string) ([]DownloadItem, error) {
 // Get downloads the file name
 func (s *SeedrAPI) Get(item DownloadItem, destination string) error {
 	var err error
-	destination = sanitize.Name(destination)
+	destination = helper.SanitizePath(destination)
 	fmt.Printf("Downloading item: %s to %s\n", item.Name, destination)
 	// Local parent folder
 	// path := fmt.Sprintf("%s/%s", destination, item.FolderPath)
