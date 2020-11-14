@@ -9,7 +9,7 @@ import (
 // config is the configuration struct
 type config struct {
 	BaseURL                   string
-	DlRoot                    string
+	DownloadDestination       string
 	PidFilePath               string
 	CachePath                 string
 	CompletedFolders          []string
@@ -68,8 +68,8 @@ func getConf() *config {
 		panic("Cannot use both API and FTP. Pick one.")
 	}
 
-	if _, err := os.Stat(conf.DlRoot); os.IsNotExist(err) {
-		os.Mkdir(conf.DlRoot, 0777)
+	if _, err := os.Stat(conf.DownloadDestination); os.IsNotExist(err) {
+		os.Mkdir(conf.DownloadDestination, 0777)
 	}
 
 	return conf

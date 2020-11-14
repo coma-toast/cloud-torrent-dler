@@ -37,7 +37,7 @@ Auto-download from a cloud torrent provider (Seedr) and save in a folder (expose
 
 - There is no way to programmatically do this without a paid Seedr account :(
 - New episodes added to your ShowRSS feed will have the magnet automatically added to Seedr.
-- Anything in the folder list from `config.yaml` will be automatically downloaded to a matching local folder under the `DlRoot` path
+- Anything in the folder list from `config.yaml` will be automatically downloaded to a matching local folder under the `DownloadDestination` path
 - This means that, currently, you will still have to periodically check Seedr and move downloaded files to the appropriate folders.
 - Additional features planned
   - Automatically move episodes added via the ShowRSS function to the correct subfolder. This will allow full automation for TV episodes
