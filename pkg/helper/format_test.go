@@ -62,6 +62,11 @@ func Test_sanitizeText(t *testing.T) {
 			args: args{input: "the.curse.of.oak.island.s08e11.1080p.web.h264-whosnext.mkv"},
 			want: "the curse of oak island s08e11 1080p web h264 whosnext",
 		},
+		{
+			name: "This is the folder name in the torrent file",
+			args: args{input: "The.Curse.of.Oak.Island.S08E11.1080p.WEB.H264-WHOSNEXT[rarbg]"},
+			want: "the curse of oak island s08e11 1080p web h264 whosnext",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
