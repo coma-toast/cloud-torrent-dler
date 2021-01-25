@@ -22,10 +22,11 @@ func SanitizePath(input string) string {
 }
 
 func replaceText(input string) string {
-	output := strings.ReplaceAll(input, "-", " ")
+	// output := strings.ReplaceAll(input, "-", " ")
+	output := strings.ReplaceAll(input, "_", " ")
 	// For some reason, a lot of file names don't quite match the magnet name - WEBRip in the magnet name is changed to webdl in the file name. Why?
 	output = strings.ReplaceAll(output, "webrip", "")
-	output = strings.ReplaceAll(output, "web dl", "")
+	output = strings.ReplaceAll(output, "web-dl", "")
 	// Sometimes it's H.264, sometimes it's H264. Why??
 	output = strings.ReplaceAll(output, "h 264", "h264")
 	// Sometimes it's h264, sometimes it's x264. Why???
@@ -35,6 +36,8 @@ func replaceText(input string) string {
 	output = strings.ReplaceAll(output, "]", "")
 	// " -" now becomes "  " which is not right. Make it single space
 	output = strings.ReplaceAll(output, "  ", " ")
+	// as a result of all this nonsense, sometimes there are multiple . in a row. Fix that.
+	output = strings.ReplaceAll(output, "..", ".")
 
 	return output
 }
