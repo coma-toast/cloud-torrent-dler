@@ -22,47 +22,47 @@ func Test_sanitizeText(t *testing.T) {
 		{
 			name: "webrip",
 			args: args{input: "The 100 S07E13 1080p CW WEBRip AAC2 0 H264 BTN"},
-			want: "the 100 s07e13 1080p cw aac2 0 h264 btn",
+			want: "the 100 s07e13 1080p cw aac2 0 btn",
 		},
 		{
 			name: "web dl",
-			args: args{input: "The 100 S07E13 1080p CW WEB DL AAC2 0 H264 BTN"},
-			want: "the 100 s07e13 1080p cw aac2 0 h264 btn",
+			args: args{input: "The 100 S07E13 1080p CW WEB-DL AAC2 0 H264 BTN"},
+			want: "the 100 s07e13 1080p cw aac2 0 btn",
 		},
 		{
 			name: "H264",
-			args: args{input: "The 100 S07E13 1080p CW WEB DL AAC2 0 H264 BTN"},
-			want: "the 100 s07e13 1080p cw web dl aac2 0 btn",
+			args: args{input: "The 100 S07E13 1080p CW WEB-DL AAC2 0 H264 BTN"},
+			want: "the 100 s07e13 1080p cw aac2 0 btn",
 		},
 		{
 			name: "H.264",
 			args: args{input: "The.100.S07E13.1080p.CW.WEB-DL.AAC2.0.H.264-BTN"},
-			want: "the.100.s07e13.1080p.cw.web-dl.aac2.0.-btn",
+			want: "the.100.s07e13.1080p.cw.aac2.0.-btn",
 		},
 		{
 			name: "[]",
 			args: args{input: "23.Walks.2020.1080p.WEB-DL.DD5.1.H.264-EVO[TGx]"},
-			want: "23.walks.2020.1080p.dd5.1.h.264-evotgx",
+			want: "23.walks.2020.1080p.dd5.1.-evotgx",
 		},
 		{
 			name: "lots of dots",
 			args: args{input: "Paw.Patrol.S07E30.Moto.Pups.Pups.vs.the.Ruff-Ruff.Pack.1080p.NICK.WEB-DL.AAC2.0.H.264-LAZY"},
-			want: "paw.patrol.s07e30.moto.pups.pups.vs.the.ruff-ruff.pack.1080p.nick.aac2.0.h.264-lazy",
+			want: "paw.patrol.s07e30.moto.pups.pups.vs.the.ruff-ruff.pack.1080p.nick.aac2.0.-lazy",
 		},
 		{
 			name: "SanitizeText for ShowRSS",
 			args: args{input: "The Curse of Oak Island S08E11 1080p WEB H264 WHOSNEXT"},
-			want: "the curse of oak island s08e11 1080p web h264 whosnext",
+			want: "the curse of oak island s08e11 1080p web whosnext",
 		},
 		{
 			name: "SanitizeText for Seedr",
-			args: args{input: "the.curse.of.oak.island.s08e11.1080p.web.h264-whosnext.mkv"},
-			want: "the curse of oak island s08e11 1080p web h264 whosnext",
+			args: args{input: "the.curse.of.oak.island.s08e11.1080p.web.h264-whosnext"},
+			want: "the.curse.of.oak.island.s08e11.1080p.web.-whosnext",
 		},
 		{
 			name: "This is the folder name in the torrent file",
 			args: args{input: "The.Curse.of.Oak.Island.S08E11.1080p.WEB.H264-WHOSNEXT[rarbg]"},
-			want: "the curse of oak island s08e11 1080p web h264 whosnext",
+			want: "the.curse.of.oak.island.s08e11.1080p.web.-whosnextrarbg",
 		},
 	}
 	for _, tt := range tests {

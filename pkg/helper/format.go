@@ -31,9 +31,11 @@ func replaceText(input string) string {
 	output = strings.ReplaceAll(output, "webrip", "")
 	output = strings.ReplaceAll(output, "web-dl", "")
 	// Sometimes it's H.264, sometimes it's H264. Why??
-	output = strings.ReplaceAll(output, "h 264", "h264")
+	output = strings.ReplaceAll(output, "h 264", "")
+	output = strings.ReplaceAll(output, "h.264", "")
+	output = strings.ReplaceAll(output, "h264", "")
 	// Sometimes it's h264, sometimes it's x264. Why???
-	output = strings.ReplaceAll(output, "x264", "h264")
+	output = strings.ReplaceAll(output, "x264", "")
 	// [] causes crashes. yay.
 	output = strings.ReplaceAll(output, "[", "")
 	output = strings.ReplaceAll(output, "]", "")
