@@ -17,8 +17,11 @@ func SanitizeText(input string) string {
 
 // SanitizePath is like SanitizeText, but without the / replaced
 func SanitizePath(input string) string {
-	return replaceText(input)
+	array := strings.SplitAfter(input, "/")
+	array[len(array)-1] = SanitizeText(array[len(array)-1])
+	output := strings.Join(array, "")
 
+	return output
 }
 
 func replaceText(input string) string {
