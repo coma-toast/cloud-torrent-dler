@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -49,7 +50,9 @@ var dryRun = false
 
 func main() {
 	log.Println("Starting up...")
-	conf = getConf()
+	configPath := flag.String("conf", ".", "config path")
+	flag.Parse()
+	conf = getConf(configPath)
 	err := cache.Initialize(conf.CachePath)
 	if err != nil {
 		dryRun = true
