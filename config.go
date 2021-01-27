@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/viper"
@@ -49,6 +50,7 @@ var (
 )
 
 func getConf(configPath string) *config {
+	fmt.Println(configPath)
 	viper.AddConfigPath(configPath)
 	viper.SetConfigName("config")
 	err := viper.ReadInConfig()
