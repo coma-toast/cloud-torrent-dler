@@ -48,8 +48,8 @@ var (
 	conf *config
 )
 
-func getConf() *config {
-	viper.AddConfigPath("$HOME/.config/cloud-torrent-dler")
+func getConf(configPath string) *config {
+	viper.AddConfigPath(configPath)
 	viper.SetConfigName("config")
 	err := viper.ReadInConfig()
 
