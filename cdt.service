@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/bin/bash /home/jason/ctd.sh
+ExecStart=/home/jason/scripts/ctd.sh
 TimeoutStartSec=0
 
 [Install]

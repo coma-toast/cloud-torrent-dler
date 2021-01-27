@@ -59,7 +59,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/bin/bash /home/jason/ctd.sh
+ExecStart=/bin/bash /home/<username>/scripts/ctd.sh
 TimeoutStartSec=0
 
 [Install]
@@ -70,5 +70,5 @@ WantedBy=default.target
 `/home/jason/ctd.sh`
 ```
 #!/bin/bash
-/home/jason/git/cloud-torrent-dler/cloud-torrent-dler
+/home/<username>/git/cloud-torrent-dler/cloud-torrent-dler -conf=/home/<username>/.config/cloud-torrent-dler
 ```
