@@ -208,6 +208,7 @@ func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item 
 
 	item.ShowID = cacheItem.ShowID
 	item.EpisodeID = cacheItem.EpisodeID
+	item.FolderPath = downloadFolder + "/" + folderName
 	item.SeedrID, err = selectedSeedr.FindID(filename)
 	if err != nil {
 		return err
