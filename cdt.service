@@ -1,0 +1,11 @@
+[Unit]
+Description=Cloud Torrent Downloader
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/bin/bash /home/jason/ctd.sh
+TimeoutStartSec=0
+
+[Install]
+WantedBy=default.target

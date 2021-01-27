@@ -48,3 +48,27 @@ Auto-download from a cloud torrent provider (Seedr) and save in a folder (expose
 
 - Better error handling in general. I always put this off even though I know better. 
 - Refactor the download function - create a download queue that will be parsed through. 
+
+
+
+## Service file:
+```
+[Unit]
+Description=Cloud Torrent Downloader
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/bin/bash /home/jason/ctd.sh
+TimeoutStartSec=0
+
+[Install]
+WantedBy=default.target
+```
+## Script to start:
+
+`/home/jason/ctd.sh`
+```
+#!/bin/bash
+/home/jason/git/cloud-torrent-dler/cloud-torrent-dler
+```
