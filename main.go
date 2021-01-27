@@ -52,7 +52,7 @@ func main() {
 	log.Println("Starting up...")
 	configPath := flag.String("conf", ".", "config path")
 	flag.Parse()
-	conf = getConf(configPath)
+	conf = getConf(*configPath)
 	err := cache.Initialize(conf.CachePath)
 	if err != nil {
 		dryRun = true
