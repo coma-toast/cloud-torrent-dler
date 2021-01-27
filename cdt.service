@@ -6,6 +6,8 @@ After=network.target
 Type=simple
 ExecStart=/home/jason/scripts/ctd.sh
 TimeoutStartSec=0
+Restart=on-failure
+RestartSec=5s
 
 [Install]
 WantedBy=default.target
