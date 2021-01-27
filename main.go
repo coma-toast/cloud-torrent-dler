@@ -204,7 +204,7 @@ func deleteTheQueue(selectedSeedr SeedrInstance, deleteQueue map[string]int) {
 func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item *DownloadItem) error {
 	var err error
 	filename := item.Name
-	folderName := string(filename[0 : len(filename)-4])
+	folderName := helper.SanitizeText(string(filename[0 : len(filename)-4]))
 	folderPath := downloadFolder + "/" + folderName
 	cacheItem := cache.Get(folderName)
 

@@ -25,11 +25,12 @@ func SanitizePath(input string) string {
 }
 
 func replaceText(input string) string {
-	// output := strings.ReplaceAll(input, "-", " ")
-	output := strings.ReplaceAll(input, "_", " ")
+	output := strings.ReplaceAll(input, "-", " ")
+	output = strings.ReplaceAll(output, "_", " ")
+	output = strings.ReplaceAll(output, ".", " ")
 	// For some reason, a lot of file names don't quite match the magnet name - WEBRip in the magnet name is changed to webdl in the file name. Why?
 	output = strings.ReplaceAll(output, "webrip", "")
-	output = strings.ReplaceAll(output, "web-dl", "")
+	output = strings.ReplaceAll(output, "web dl", "")
 	// Sometimes it's H.264, sometimes it's H264. Why??
 	output = strings.ReplaceAll(output, "h 264", "")
 	output = strings.ReplaceAll(output, "h.264", "")

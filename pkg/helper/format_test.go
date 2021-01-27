@@ -66,8 +66,8 @@ func Test_sanitizeText(t *testing.T) {
 		},
 		{
 			name: "ShowRSS Name",
-			args: args{input:"Paw Patrol S07E30 Moto Pups Pups vs the Ruff Ruff Pack 1080p NICK WEBRip AAC2 0 H264 LAZY"},
-			want: "paw patrol s07e30 moto pups pups vs the ruff ruff pack 1080p nick aac2 0 lazy"
+			args: args{input: "Paw Patrol S07E30 Moto Pups Pups vs the Ruff Ruff Pack 1080p NICK WEBRip AAC2 0 H264 LAZY"},
+			want: "paw patrol s07e30 moto pups pups vs the ruff ruff pack 1080p nick aac2 0 lazy",
 		},
 	}
 	for _, tt := range tests {
@@ -97,7 +97,8 @@ func TestSanitizePath(t *testing.T) {
 			name: "Seedr Subfolder Path",
 			args: args{input: "Shows/NotKids/The.Curse.of.Oak.Island.S08E11.1080p.WEB.H264-WHOSNEXT[rarbg]"},
 			want: "Shows/NotKids/the.curse.of.oak.island.s08e11.1080p.web.h264-whosnextrarbg",
-		},{
+		},
+		{
 			name: "Seedr Subfolder Path2",
 			args: args{input: "Shows/Kids/Paw.Patrol.S07E30.Moto.Pups.Pups.vs.the.Ruff-Ruff.Pack.1080p.NICK.WEBRip.AAC2.0.H264-LAZY[rarbg]"},
 			want: "Shows/NotKids/the.curse.of.oak.island.s08e11.1080p.web.h264-whosnextrarbg",
@@ -106,6 +107,38 @@ func TestSanitizePath(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := SanitizePath(tt.args.input); got != tt.want {
+				t.Errorf("\n\nsanitizePath()\n  got:\n    %v\n  want:\n    %v\n\n", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSanitizeBoth(t *testing.T) {
+	type args struct {
+		input string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "Seedr Name",
+			args: args{input: "Paw.Patrol.S07E30.Moto.Pups.Pups.vs.the.Ruff-Ruff.Pack.1080p.NICK.WEB-DL.AAC2.0.H.264-LAZY"},
+			want: "paw patrol s07e30 moto pups pups vs the ruff ruff pack 1080p nick aac2 0 lazy",
+		},
+		{
+			name: "ShowRSS Name",
+			args: args{input: "Paw Patrol S07E30 Moto Pups Pups vs the Ruff Ruff Pack 1080p NICK WEBRip AAC2 0 H264 LAZY"},
+			want: "paw patrol s07e30 moto pups pups vs the ruff ruff pack 1080p nick aac2 0 lazy",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := SanitizePath(tt.args.input); got != tt.want {
+				t.Errorf("\n\nsanitizePath()\n  got:\n    %v\n  want:\n    %v\n\n", got, tt.want)
+			}
+			if got := SanitizeText(tt.args.input); got != tt.want {
 				t.Errorf("\n\nsanitizeText()\n  got:\n    %v\n  want:\n    %v\n\n", got, tt.want)
 			}
 		})
