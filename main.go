@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/helper"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/pidcheck"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/showrss"
 )
@@ -204,11 +205,12 @@ func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item 
 	var err error
 	filename := item.Name
 	folderName := string(filename[0 : len(filename)-4])
+	folderPath := downloadFolder + "/" + folderName
 	cacheItem := cache.Get(folderName)
 
 	item.ShowID = cacheItem.ShowID
 	item.EpisodeID = cacheItem.EpisodeID
-	item.FolderPath = downloadFolder + "/" + folderName
+	item.FolderPath = helper.SanitizePath(folderPath)
 	item.SeedrID, err = selectedSeedr.FindID(filename)
 	if err != nil {
 		return err
