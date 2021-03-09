@@ -69,6 +69,11 @@ func Test_sanitizeText(t *testing.T) {
 			args: args{input: "Paw Patrol S07E30 Moto Pups Pups vs the Ruff Ruff Pack 1080p NICK WEBRip AAC2 0 H264 LAZY"},
 			want: "paw patrol s07e30 moto pups pups vs the ruff ruff pack 1080p nick aac2 0 lazy",
 		},
+		{
+			name: "Workin Moms",
+			args: args{input: "Workin.Moms.S05E03.1080p.WEBRip.x264-BAE[rarbg]"},
+			want: "workin moms s05e03 1080p bae",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
