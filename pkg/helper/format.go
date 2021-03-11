@@ -40,7 +40,9 @@ func replaceText(input string) string {
 	// [] causes crashes. yay.
 	output = strings.ReplaceAll(output, "[", "")
 	output = strings.ReplaceAll(output, "]", "")
+	output = strings.ReplaceAll(output, "rarbg", "")
 	// " -" now becomes "  " which is not right. Make it single space
+	output = strings.ReplaceAll(output, "   ", " ")
 	output = strings.ReplaceAll(output, "  ", " ")
 	// as a result of all this nonsense, sometimes there are multiple . in a row. Fix that.
 	output = strings.ReplaceAll(output, "..", ".")
