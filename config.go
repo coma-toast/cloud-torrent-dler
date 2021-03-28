@@ -22,6 +22,7 @@ type config struct {
 	DeleteAfterDownload       bool
 	CheckEpisodesTimer        int
 	CheckFilesToDownloadTimer int
+	Port                      string
 	DevMode                   bool
 }
 

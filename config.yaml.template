@@ -24,3 +24,8 @@ CheckEpisodesTimer: 300
 CheckFilesToDownloadTimer: 300
 # Dev mode - 5 second loops, download text files instead of video files
 DevMode: false
+# Listen port for API server to add magnet URL's to Seedr
+Port: 10000
+# This is for deployment via the makefile. optional if you are going to clone this down and build on the server
+TargetServer: localhost
+TargetServerDir: ~/git/cloud-torrent-dler
