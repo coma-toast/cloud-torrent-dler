@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/secsy/goftp"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/helper"

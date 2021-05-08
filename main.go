@@ -4,19 +4,21 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"html/template"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"regexp"
 	"strings"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/gorilla/mux"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/helper"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/pidcheck"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/showrss"
+	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/yts"
 )
 
 // SeedrInstance is the instance
@@ -59,7 +61,8 @@ var cache = &Cache{}
 var dryRun = false
 
 func main() {
-	log.Println("Starting up...")
+	log.SetFormatter(&log.JSONFormatter{})
+	log.Info("Starting up...")
 	configPath := flag.String("conf", ".", "config path")
 	flag.Parse()
 	conf = getConf(*configPath)
@@ -74,15 +77,14 @@ func main() {
 	pidPath := fmt.Sprintf("%s/cloud-torrent-downloader", conf.PidFilePath)
 	pid := pidcheck.AlreadyRunning(pidPath)
 	if pid {
-		log.Println("App already running. Exiting.")
-		os.Exit(1)
+		log.Fatal("App already running. Exiting.")
 	}
 
 	// Channel so we can continuously monitor new episodes being added to showrss
 	dontExit := make(chan bool)
 	var episodeLoopTime = time.Second * time.Duration(conf.CheckEpisodesTimer)
 	if conf.DevMode {
-		log.Println("Dev mode enabled.")
+		log.Debug("##### Dev mode enabled.")
 		episodeLoopTime = time.Second * 5
 	}
 
@@ -119,8 +121,11 @@ func main() {
 				if isAVideo {
 					setCacheSeedrInfo(selectedSeedr, conf.CompletedFolders[0], &unsortedItem)
 					if unsortedItem.ShowID != 0 {
-						log.Println("Show found and autodownloading. ", unsortedItem.TVShowName)
 						path := fmt.Sprintf("%s/%s/%s%s", conf.DlRoot, conf.CompletedFolders[0], unsortedItem.TVShowName, unsortedItem.FolderPath)
+						log.WithFields(log.Fields{
+							"show":        unsortedItem.TVShowName,
+							"destination": path,
+						}).Info("Show found and autodownloading")
 						_, err = os.Stat(path + unsortedItem.Name)
 						if err != nil {
 							if os.IsNotExist(err) {
@@ -135,7 +140,7 @@ func main() {
 							}
 						}
 						if conf.DeleteAfterDownload {
-							fmt.Println("Deleting item: " + unsortedItem.Name)
+							log.WithFields(log.Fields{"item": unsortedItem.Name}).Info("Deleting item")
 							err = selectedSeedr.DeleteFile(unsortedItem.SeedrID)
 							if err != nil {
 								fmt.Println(err)
@@ -243,7 +248,7 @@ func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item 
 }
 
 func checkNewEpisodes(selectedSeedr SeedrInstance) {
-	log.Println("Checking ShowRSS for new episodes")
+	log.Info("Checking ShowRSS for new episodes")
 	initializeMagnetList, err := getNewEpisodes(conf.ShowRSS)
 	if err != nil {
 		fmt.Println(err)
@@ -387,14 +392,22 @@ type MagnetApi struct {
 	selectedSeedr SeedrInstance
 }
 
+type MainPageData struct {
+	Movies []yts.Movie
+}
+
 // RunMagnetApi is the api for adding magnet urls
 func (magnetApi *MagnetApi) RunMagnetApi() {
 	r := mux.NewRouter()
-	r.HandleFunc("/gui", magnetApi.AllHandler)
+	// r.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
+	// r.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("/assets"))))
+	r.HandleFunc("/gui", magnetApi.GuiHandler)
+	// r.HandleFunc("/assets", magnetApi.AssetsHandler)
 	r.HandleFunc("/api/ping", magnetApi.PingHandler)
 	r.HandleFunc("/api/magnet", magnetApi.AddMagnetHandler).Methods("POST")
-	log.Printf("Magnet API starting up...\nSend a magnet link as a GET request to port %s to add", conf.Port)
+	log.Info(fmt.Sprintf("Magnet API running. Send JSON {link: url} as a POST request to x.x.x.x:%s/api/magnet to add directly to Seedr!", conf.Port))
 
+	r.Use(APILoggingMiddleware)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", conf.Port), r))
 }
 
@@ -403,33 +416,50 @@ func (magnetApi *MagnetApi) AddMagnetHandler(w http.ResponseWriter, r *http.Requ
 	var data ApiMagnet
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&data); err != nil {
-		log.Println("Error decoding JSON: ", err)
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Warn("Error decoding JSON")
 	} else {
-		spew.Dump(data)
-
+		log.WithField("link", data.Link).Info("Adding Magnet/Torrent to Seedr")
 		magnetApi.AddRawMagnet(data.Link)
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Settin'\n"))
+	// * dev code
+	// w.Write([]byte("Settin'\n"))
 }
 
-// PingHandler is just a quick test to ensure api calls are working.
-func (magnetApi *MagnetApi) AllHandler(w http.ResponseWriter, r *http.Request) {
+// Load the web front end
+func (magnetApi *MagnetApi) GuiHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	bytes, err := ioutil.ReadAll(r.Body)
+	// * dev code
+	_ = bytes
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 	}
-	data := string(bytes)
-	spew.Dump(data)
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(data))
+	templateMain := template.Must(template.ParseFiles("templates/main.html"))
+	movieData, err := yts.GetMovies("https://yts.mx/api/v2/list_movies.json?quality=2160p")
+	if err != nil {
+		log.WithField("error", err).Warn("Error getting Movie Data from YTS")
+	}
+	data := MainPageData{
+		Movies: movieData,
+	}
+
+	templateMain.Execute(w, data)
+
+	// w.WriteHeader(http.StatusOK)
+	// w.Write([]byte(data))
+}
+
+func (magnetApi *MagnetApi) AssetsHandler(w http.ResponseWriter, r *http.Request) {
+	http.FileServer(http.Dir("./assets"))
 }
 
 // PingHandler is just a quick test to ensure api calls are working.
 func (magnetApi *MagnetApi) PingHandler(w http.ResponseWriter, r *http.Request) {
-	spew.Dump("here in ping")
+	log.Debug("Request sent to /api/ping")
 
 	w.Write([]byte("Pong\n"))
 }
@@ -445,4 +475,15 @@ func (magnetApi *MagnetApi) AddRawMagnet(magnetLink string) error {
 	}
 
 	return nil
+}
+
+func APILoggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.WithFields(log.Fields{
+			"source": r.Header.Get("X-FORWARDED-FOR"),
+			"url":    r.Header.Get("URL"),
+		})
+
+		next.ServeHTTP(w, r)
+	})
 }

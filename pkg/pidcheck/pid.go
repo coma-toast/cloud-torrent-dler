@@ -3,11 +3,12 @@ package pidcheck
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"strconv"
 	"strings"
 	"syscall"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // AlreadyRunning determines if there is a process already running

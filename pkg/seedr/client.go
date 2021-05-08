@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
+	log "github.com/sirupsen/logrus"
 )
 
 // Client is the Seedr Client
@@ -54,6 +54,10 @@ func (c *Client) stream(method string, url string, payload interface{}) (*http.R
 		}
 	}
 	request, err := http.NewRequest(method, url, strings.NewReader(postData))
+	if err != nil {
+		return &http.Response{}, err
+	}
+
 	request.Header.Set("Authorization", "Basic "+c.credentials)
 	request.Header.Add("content-type", "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW")
 	resp, err := c.client.Do(request)
@@ -64,7 +68,8 @@ func (c *Client) stream(method string, url string, payload interface{}) (*http.R
 	if resp.StatusCode != http.StatusOK {
 		return &http.Response{}, errors.New("HTTP error occurred. Status code: " + strconv.Itoa(resp.StatusCode))
 	}
-	spew.Dump(resp.StatusCode)
+
+	log.WithField("status code", resp.StatusCode).Info("HTTP request sent")
 
 	return resp, err
 }
