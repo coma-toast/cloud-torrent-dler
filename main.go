@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"html/template"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -61,12 +62,28 @@ var cache = &Cache{}
 var dryRun = false
 
 func main() {
-	log.SetFormatter(&log.JSONFormatter{})
-	log.Info("Starting up...")
 	configPath := flag.String("conf", ".", "config path")
 	flag.Parse()
 	conf = getConf(*configPath)
-	err := cache.Initialize(conf.CachePath)
+
+	// Logging setup
+	log.SetFormatter(&log.JSONFormatter{})
+	date := time.Now().Format("01-02-2006")
+	err := os.MkdirAll("log", 0777)
+	if err != nil {
+		log.WithField("error", err).Warn("Unable to create log directory")
+	}
+	fileLocation := fmt.Sprintf("log/ctd-%s.log", date)
+	file, err := os.OpenFile(fileLocation, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
+	if err == nil {
+		log.SetOutput(io.MultiWriter(file, os.Stdout))
+	} else {
+		log.WithField("error", err).Warn("Failed to log to file, using default stderr")
+	}
+	log.Info("Starting up...")
+
+	// Cache setup
+	err = cache.Initialize(conf.CachePath)
 	if err != nil {
 		dryRun = true
 		fmt.Println(err)
