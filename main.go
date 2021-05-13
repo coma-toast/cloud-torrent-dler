@@ -120,7 +120,6 @@ func main() {
 
 	magnetApi := &MagnetApi{selectedSeedr: selectedSeedr}
 	go magnetApi.RunMagnetApi()
-	log.Info("here -------------------")
 
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 
@@ -144,9 +143,15 @@ func main() {
 				okToDeleteFolder := false
 				isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", unsortedItem.Name)
 				if isAVideo {
+					name := helper.SanitizeText(string(unsortedItem.Name[0 : len(unsortedItem.Name)-4]))
+					itemCacheData := cache.Get(name)
+					_ = itemCacheData
 					setCacheSeedrInfo(selectedSeedr, conf.CompletedFolders[0], &unsortedItem)
 					if unsortedItem.ShowID != 0 {
-						path := fmt.Sprintf("%s/%s/%s", conf.DlRoot, conf.CompletedFolders[0], unsortedItem.TVShowName)
+						path := fmt.Sprintf("%s/%s", conf.DlRoot, conf.CompletedFolders[0])
+						if unsortedItem.TVShowName != "" {
+							path = fmt.Sprintf("%s/%s", path, unsortedItem.TVShowName)
+						}
 						log.WithFields(log.Fields{
 							"show":        unsortedItem.TVShowName,
 							"destination": path,
@@ -295,8 +300,7 @@ func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item 
 		return err
 	}
 
-	showRssItem := showrss.GetShowInfoByEpisodeID(conf.ShowRSS, item.ShowID)
-	item.TVShowName = showRssItem.TVShowName
+	item.TVShowName = cacheItem.TVShowName
 
 	err = cache.Set(folderName, *item)
 	if err != nil {

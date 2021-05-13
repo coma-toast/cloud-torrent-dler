@@ -4,6 +4,8 @@ After=network.target
 
 [Service]
 Type=simple
+# user you want this to run as
+User=jason
 ExecStart=/home/jason/scripts/ctd.sh
 TimeoutStartSec=0
 Restart=on-failure

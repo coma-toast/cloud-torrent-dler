@@ -65,6 +65,7 @@ func (s *SeedrAPI) List(path string) ([]DownloadItem, error) {
 			ParentSeedrID: folderID,
 			SeedrID:       cacheData.SeedrID,
 			ShowID:        cacheData.ShowID,
+			TVShowName:    cacheData.TVShowName,
 		}
 		folderList = append(folderList, appendData)
 	}
@@ -88,6 +89,7 @@ func (s *SeedrAPI) List(path string) ([]DownloadItem, error) {
 			ParentSeedrID: folderID,
 			SeedrID:       id,
 			ShowID:        cacheData.ShowID,
+			TVShowName:    cacheData.TVShowName,
 		}
 		folderList = append(folderList, appendData)
 		s.folderMapping[file.ID] = file.FileName

@@ -5,3 +5,4 @@ cloud-torrent-dler
 .DS_Store
 var/
 cache.json
+log/
