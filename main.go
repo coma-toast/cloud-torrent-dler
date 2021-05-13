@@ -295,6 +295,9 @@ func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item 
 		return err
 	}
 
+	showRssItem := showrss.GetShowInfoByEpisodeID(conf.ShowRSS, item.ShowID)
+	item.TVShowName = showRssItem.TVShowName
+
 	err = cache.Set(folderName, *item)
 	if err != nil {
 		return err

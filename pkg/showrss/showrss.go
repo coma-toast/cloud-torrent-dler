@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // GetShows gets all episodes
@@ -44,6 +46,20 @@ func GetAllEpisodeItems(url string) ([]Item, error) {
 		return nil, err
 	}
 	return shows.Item, nil
+}
+
+func GetShowInfoByEpisodeID(url string, id int) Item {
+	allItems, err := GetAllEpisodeItems(url)
+	if err != nil {
+		log.Warn("Error getting all show info", err)
+	}
+	for _, item := range allItems {
+		if item.TVEpisodeID == id {
+			return item
+		}
+	}
+
+	return Item{}
 }
 
 func getXML(url string) ([]byte, error) {
