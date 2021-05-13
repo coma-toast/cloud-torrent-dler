@@ -35,9 +35,10 @@ type SeedrInstance interface {
 
 // Magnet is for magnet links and their ID
 type Magnet struct {
-	ID   int
-	link string
-	name string
+	ID         int
+	link       string
+	name       string
+	tVShowName string
 }
 
 // ApiMagnet is the struct for data for working with Magnets via api
@@ -68,6 +69,9 @@ func main() {
 
 	// Logging setup
 	log.SetFormatter(&log.JSONFormatter{})
+	if conf.DevMode {
+		log.SetLevel(log.DebugLevel)
+	}
 	date := time.Now().Format("01-02-2006")
 	err := os.MkdirAll("log", 0777)
 	if err != nil {
@@ -86,7 +90,7 @@ func main() {
 	err = cache.Initialize(conf.CachePath)
 	if err != nil {
 		dryRun = true
-		fmt.Println(err)
+		log.WithField("error", err).Warn("Error initializing cache")
 	}
 
 	selectedSeedr := conf.GetSeedrInstance()
@@ -97,25 +101,26 @@ func main() {
 		log.Fatal("App already running. Exiting.")
 	}
 
-	// Channel so we can continuously monitor new episodes being added to showrss
-	dontExit := make(chan bool)
 	var episodeLoopTime = time.Second * time.Duration(conf.CheckEpisodesTimer)
 	if conf.DevMode {
-		log.Debug("##### Dev mode enabled.")
+		log.Debug("#####    Dev mode enabled.    ##### ")
 		episodeLoopTime = time.Second * 5
 	}
 
 	go func() {
+		log.Debug("Starting first run of checkNewEpisode")
 		checkNewEpisodes(selectedSeedr)
 		// ticker to control how often the loop runs
 		// for range time.NewTicker(time.Second * 10).C { // * dev code
 		for range time.NewTicker(episodeLoopTime).C {
+			log.Debug("Timer loop running checkNewEpisodes")
 			checkNewEpisodes(selectedSeedr)
 		}
 	}()
 
 	magnetApi := &MagnetApi{selectedSeedr: selectedSeedr}
-	magnetApi.RunMagnetApi()
+	go magnetApi.RunMagnetApi()
+	log.Info("here -------------------")
 
 	// TODO: worker pools for downloading - they take a long time and setting a limit would be good
 
@@ -124,21 +129,24 @@ func main() {
 		downloadLoopTime = time.Second * 10
 	}
 	// downloadWorker()
+	// Channel so we can continuously monitor new episodes being added to showrss
+
 	go func() {
 		for range time.NewTicker(downloadLoopTime).C {
 			deleteQueue := make(map[string]int)
 			unsortedItems, err := findAllToDownload(selectedSeedr, "", conf.UseFTP)
 			if err != nil {
-				fmt.Println(err)
+				log.WithField("error", err).Warn("Error finding all downloads")
 			}
 		unsortedLoop:
 			for _, unsortedItem := range unsortedItems {
+				dataLog(unsortedItem, "Unsorted loop")
 				okToDeleteFolder := false
 				isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", unsortedItem.Name)
 				if isAVideo {
 					setCacheSeedrInfo(selectedSeedr, conf.CompletedFolders[0], &unsortedItem)
 					if unsortedItem.ShowID != 0 {
-						path := fmt.Sprintf("%s/%s/%s%s", conf.DlRoot, conf.CompletedFolders[0], unsortedItem.TVShowName, unsortedItem.FolderPath)
+						path := fmt.Sprintf("%s/%s/%s", conf.DlRoot, conf.CompletedFolders[0], unsortedItem.TVShowName)
 						log.WithFields(log.Fields{
 							"show":        unsortedItem.TVShowName,
 							"destination": path,
@@ -148,7 +156,7 @@ func main() {
 							if os.IsNotExist(err) {
 								err = selectedSeedr.Get(unsortedItem, path)
 								if err != nil {
-									fmt.Println(err)
+									log.WithField("error", err).Warn("Error getting the file ", unsortedItem.Name)
 									okToDeleteFolder = false
 									delete(deleteQueue, unsortedItem.FolderPath)
 									break unsortedLoop
@@ -157,10 +165,10 @@ func main() {
 							}
 						}
 						if conf.DeleteAfterDownload {
-							log.WithFields(log.Fields{"item": unsortedItem.Name}).Info("Deleting item")
+							infoLog(unsortedItem, "Deleting item")
 							err = selectedSeedr.DeleteFile(unsortedItem.SeedrID)
 							if err != nil {
-								fmt.Println(err)
+								log.WithField("error", err).Warn("Error deleting file ", unsortedItem.Name)
 
 							}
 						}
@@ -172,10 +180,11 @@ func main() {
 			}
 		outerLoop:
 			for _, downloadFolder := range conf.CompletedFolders {
+				log.WithField("folder", downloadFolder).Debug("outerLoop")
 				okToDeleteFolder := true
 				list, err := findAllToDownload(selectedSeedr, downloadFolder, conf.UseFTP)
 				if err != nil {
-					fmt.Println(err)
+					log.WithField("error", err).Warn("Error finding downloads")
 				}
 
 				for _, item := range list {
@@ -185,13 +194,15 @@ func main() {
 						isAVideo, _ = regexp.MatchString("(.*?).(txt|jpg)$", item.Name)
 					}
 					if isAVideo {
+						dataLog(item, "Setting cache for item")
 						setCacheSeedrInfo(selectedSeedr, downloadFolder, &item)
 						localPath := fmt.Sprintf("%s/%s", conf.DlRoot, item.FolderPath)
 						thisShouldBeDownloaded := shouldThisBeDownloaded(localPath + item.Name)
 						if thisShouldBeDownloaded {
+							dataLog(item, "Item will be downloaded")
 							err = selectedSeedr.Get(item, localPath)
 							if err != nil {
-								fmt.Println(err)
+								log.WithField("error", err).Warn("Error getting file ", item.Name)
 								okToDeleteFolder = false
 								delete(deleteQueue, item.FolderPath)
 								break outerLoop
@@ -200,11 +211,11 @@ func main() {
 						}
 					}
 					if conf.DeleteAfterDownload {
+						infoLog(item, "Download complete, deleting item")
 						fmt.Println("Deleting item: " + item.Name)
 						err = selectedSeedr.DeleteFile(item.SeedrID)
 						if err != nil {
-							fmt.Println(err)
-
+							log.WithField("error", err).Warn("Error deleting file", item.Name)
 						}
 					}
 					if okToDeleteFolder {
@@ -214,20 +225,47 @@ func main() {
 			}
 			deleteTheQueue(selectedSeedr, deleteQueue)
 		}
-
-		// Waiting for a channel that never comes...
-		<-dontExit
 	}()
+	dontExit := make(chan bool)
+	for {
+		time.Sleep(1000000)
+	}
+	// Waiting for a channel that never comes...
+	<-dontExit
+}
+
+// * Logging functions
+func dataLog(item DownloadItem, message string) {
+	contextLogger := log.WithFields(log.Fields{
+		"episodeID":     item.EpisodeID,
+		"folderPath":    item.FolderPath,
+		"isDir":         item.IsDir,
+		"name":          item.Name,
+		"tVShowName":    item.TVShowName,
+		"parentSeedrID": item.ParentSeedrID,
+		"seedrID":       item.SeedrID,
+		"showID":        item.ShowID,
+	})
+
+	contextLogger.Debug(message)
+}
+
+func infoLog(item DownloadItem, message string) {
+	contextLogger := log.WithFields(log.Fields{
+		"folderPath": item.FolderPath,
+		"name":       item.Name,
+	})
+
+	contextLogger.Info(message)
 }
 
 func deleteTheQueue(selectedSeedr SeedrInstance, deleteQueue map[string]int) {
 	if conf.DeleteAfterDownload {
 		for name, id := range deleteQueue {
 			fmt.Println("Deleting folder: " + name)
-			var err error
-			err = selectedSeedr.DeleteFolder(id)
+			err := selectedSeedr.DeleteFolder(id)
 			if err != nil {
-				fmt.Println(err)
+				log.WithField("error", err).Warn("Error deleting the queue")
 			}
 		}
 	}
@@ -245,12 +283,13 @@ func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item 
 	var err error
 	filename := item.Name
 	folderName := helper.SanitizeText(string(filename[0 : len(filename)-4]))
-	folderPath := downloadFolder + "/" + folderName
+	// folderPath := downloadFolder + "/" + folderName
 	cacheItem := cache.Get(folderName)
 
 	item.ShowID = cacheItem.ShowID
 	item.EpisodeID = cacheItem.EpisodeID
-	item.FolderPath = helper.SanitizePath(folderPath)
+	// item.FolderPath = helper.SanitizePath(folderPath)
+	item.FolderPath = downloadFolder
 	item.SeedrID, err = selectedSeedr.FindID(filename)
 	if err != nil {
 		return err
@@ -268,26 +307,26 @@ func checkNewEpisodes(selectedSeedr SeedrInstance) {
 	log.Info("Checking ShowRSS for new episodes")
 	initializeMagnetList, err := getNewEpisodes(conf.ShowRSS)
 	if err != nil {
-		fmt.Println(err)
+		log.WithField("error", err).Warn("Error getting new episodes")
 		return
 	}
 
 	allShows, err := showrss.GetShows(conf.ShowRSS)
 	if err != nil {
-		fmt.Println(err)
+		log.WithField("error", err).Warn("Error getting shows")
 		return
 	}
 
 	for _, magnet := range initializeMagnetList {
 		showID, err := getShowIDFromEpisodeID(magnet.ID, allShows)
 		if err != nil {
-			fmt.Println(err)
+			log.WithField("error", err).Warn("Error getting ShowID from EpisodeID")
 			continue
 		}
 
 		err = AddMagnet(selectedSeedr, magnet, showID)
 		if err != nil {
-			fmt.Println(err)
+			log.WithField("error", err).Warn("Error adding Magnet")
 			continue
 		}
 	}
@@ -340,6 +379,7 @@ func AddMagnet(instance SeedrInstance, data Magnet, showID int) error {
 		SeedrID:    0,
 		Name:       data.name,
 		FolderPath: "",
+		TVShowName: data.tVShowName,
 	}
 
 	magnetParts := strings.Split(data.link, "&")
@@ -396,9 +436,10 @@ func getNewEpisodes(url string) ([]Magnet, error) {
 	}
 	for _, item := range episodes {
 		returnData = append(returnData, Magnet{
-			ID:   item.ItemTVEpisodeID(),
-			link: item.ItemLink(),
-			name: item.ItemTitle(),
+			ID:         item.ItemTVEpisodeID(),
+			link:       item.ItemLink(),
+			name:       item.ItemTitle(),
+			tVShowName: item.ItemTVShowName(),
 		})
 	}
 
