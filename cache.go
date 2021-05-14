@@ -22,7 +22,7 @@ func (c *Cache) Initialize(path string) error {
 	c.mutex = &sync.Mutex{}
 	c.path = filePath
 	cache.state = make(map[string]DownloadItem)
-	err := jsonio.ReadFile(path, &cache.state)
+	err := jsonio.ReadFile(filePath, &cache.state)
 	if err != nil {
 		return err
 	}
