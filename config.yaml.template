@@ -4,7 +4,7 @@ DlRoot: "/path"
 PidFilePath: "/path"
 # Where should cache.json live? (I use $HOME, ./tmp or similar temp location)
 # If there is an issue and you need to re-download something, you can remove that item from the cache and it will re-download again
-CachePath: "/home/username/cache.json"
+CachePath: "/home/username/cloud-torrent-dler"
 # Array of folders to monitor for completed downloads. Subfolders here will map to subfolders in DlRoot.
 # NOTE: the first folder in this list MUST be the folder for TV Shows - autodownloading of shows picks the first item in the array
 CompletedFolders: ["Shows","Movies/Kids", "Movies/NotKids"]

@@ -73,11 +73,11 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 	date := time.Now().Format("01-02-2006")
-	err := os.MkdirAll("log", 0777)
+	err := os.MkdirAll(conf.CachePath+"/log", 0777)
 	if err != nil {
 		log.WithField("error", err).Warn("Unable to create log directory")
 	}
-	fileLocation := fmt.Sprintf("log/ctd-%s.log", date)
+	fileLocation := fmt.Sprintf("%s/log/ctd-%s.log", conf.CachePath, date)
 	file, err := os.OpenFile(fileLocation, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
 	if err == nil {
 		log.SetOutput(io.MultiWriter(file, os.Stdout))

@@ -18,8 +18,9 @@ type Cache struct {
 
 // Initialize the cache so it doesn't panic when trying to assign to the map when the map is nil
 func (c *Cache) Initialize(path string) error {
+	filePath := fmt.Sprintf("%s/cache.json", path)
 	c.mutex = &sync.Mutex{}
-	c.path = path
+	c.path = filePath
 	cache.state = make(map[string]DownloadItem)
 	err := jsonio.ReadFile(path, &cache.state)
 	if err != nil {
