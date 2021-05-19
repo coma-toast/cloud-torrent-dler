@@ -37,10 +37,27 @@
                                         {{ .Rating }}
                                     </td>
                                     <td>
-                                        {{ range .Torrents }}
+                                        <table class="table table-striped table-hover table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Quality</th>
+                                                    <th>Seeders</th>
+                                                    <th>Leechers</th>
+                                                    <th>Upload Date</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
 
-                                        <button class="btn btn-success download" data-torrent="{{ .Url}}">{{ .Quality }}</button>
-                                        {{ end }}
+                                                {{ range .Torrents }}
+                                                <tr>
+                                                    <td><button class="btn btn-success download" data-torrent="{{ .Url}}">{{ .Quality }}</button></td>
+                                                    <td>{{ .Seeds }}</td>
+                                                    <td>{{ .Peers }}</td>
+                                                    <td>{{ .Date_uploaded }}</td>
+                                                </tr>
+                                                {{ end }}
+                                            </tbody>
+                                        </table>
                                     </td>
                                 </tr>
                                 {{ end }}
