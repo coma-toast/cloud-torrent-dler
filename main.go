@@ -475,8 +475,8 @@ func (magnetApi *MagnetApi) RunMagnetApi() {
 	// Serve static files
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
 
-	r.Use(APILoggingMiddleware)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", conf.Port), r))
+	// r.Use(APILoggingMiddleware)
+	log.Error(http.ListenAndServe(fmt.Sprintf(":%s", conf.Port), r))
 }
 
 // AddMagnetHandler handles api calls adding magnets
