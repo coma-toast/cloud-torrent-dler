@@ -543,7 +543,7 @@ func (magnetApi *MagnetApi) GuiHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 
-	templateMain := template.Must(template.ParseFiles("templates/main.html"))
+	templateMain := template.Must(template.ParseFiles(conf.CachePath + "/templates/main.html"))
 	movieData, err := yts.GetMovies("https://yts.mx/api/v2/list_movies.json?quality=2160p")
 	if err != nil {
 		log.WithField("error", err).Warn("Error getting Movie Data from YTS")
