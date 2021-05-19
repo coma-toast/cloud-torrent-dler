@@ -6,6 +6,14 @@ import (
 	"github.com/kennygrant/sanitize"
 )
 
+// ParseResult formats the Seedr API call result properly
+func ParseResult(input []byte) string {
+	inputString := string(input)
+	removedSlashes := strings.ReplaceAll(inputString, `\"`, `"`)
+
+	return removedSlashes
+}
+
 // SanitizeText eliminates unnecessary formatting.
 func SanitizeText(input string) string {
 	output := sanitize.BaseName(input)

@@ -35,12 +35,12 @@ func (c config) GetSeedrInstance() SeedrInstance {
 		}
 
 		return selectedSeedr
-	} else if c.UseFTP {
-		selectedSeedr = &SeedrFTP{
-			Username: c.Username,
-			Password: c.Passwd,
-		}
-		return selectedSeedr
+		// } else if c.UseFTP {
+		// 	selectedSeedr = &SeedrFTP{
+		// 		Username: c.Username,
+		// 		Password: c.Passwd,
+		// 	}
+		// 	return selectedSeedr
 	}
 	panic("Please provide a method")
 }

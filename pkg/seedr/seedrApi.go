@@ -1,12 +1,14 @@
 package seedr
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
+	log "github.com/sirupsen/logrus"
 )
 
 // Service is the service
@@ -16,7 +18,8 @@ type Service interface {
 	DeleteFile(id int) error
 	DeleteFolder(id int) error
 	DownloadFileByID(id int, destination string) error
-	AddMagnet(magnet string) error
+	AddMagnet(magnet string) (Result, error)
+	AddTorrent(magnet string) (Result, error)
 }
 
 // DeleteFolder deletes a folder from Seedr
@@ -98,10 +101,35 @@ func (c Client) downloadFile(url string, destination string) error {
 }
 
 //AddMagnet adds a magnet link to Seedr to be downloaded
-func (c Client) AddMagnet(magnet string) error {
+func (c Client) AddMagnet(magnet string) (Result, error) {
 	var err error
+	var resultData Result
 	url := fmt.Sprintf("/torrent/magnet")
 	result, err := c.call(http.MethodPost, url, magnet, nil)
-	spew.Dump("Result: ", result)
-	return err
+	if err != nil {
+		log.WithError(err)
+	}
+
+	log.WithField("data", result).Debug("POST request with magnet data sent successfully")
+	err = json.Unmarshal(result, &resultData)
+	log.WithField("data", resultData).Debug("resultData")
+
+	return resultData, err
+}
+
+//AddTorrent adds a torrent URL to Seedr to be downloaded
+func (c Client) AddTorrent(torrentUrl string) (Result, error) {
+	var err error
+	var resultData Result
+	url := fmt.Sprintf("/torrent/url")
+	result, err := c.call(http.MethodPost, url, torrentUrl, nil)
+	if err != nil {
+		log.WithError(err)
+	}
+
+	log.WithField("data", result).Debug("POST request with torrent url sent successfully")
+	err = json.Unmarshal(result, &resultData)
+	log.WithField("data", resultData).Debug("resultData")
+
+	return resultData, err
 }

@@ -154,3 +154,27 @@ func TestSanitizeBoth(t *testing.T) {
 		})
 	}
 }
+
+func TestParseResult(t *testing.T) {
+	type args struct {
+		input []byte
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "short add",
+			args: args{input: []byte([123 34 114 101 115 117 108 116 34 58 116 114 117 101 125])},
+			want: "{\"result\": true}",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ParseResult(tt.args.input); got != tt.want {
+				t.Errorf("\n\nParseResult()\n  got:\n    %v\n  want:\n    %v\n\n", got, tt.want)
+			}
+		})
+	}
+}

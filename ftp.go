@@ -106,6 +106,12 @@ func (s *SeedrFTP) Add(magnet string) error {
 	return err
 }
 
+// Add doesn't add - FTP add unsupported
+func (s *SeedrFTP) AddTorrent(torrentUrl string) error {
+	err := fmt.Errorf("No add function for FTP.")
+	return err
+}
+
 // DeleteFolder doesn't work yet.
 func (s *SeedrFTP) DeleteFolder(id int) error {
 	return nil

@@ -130,19 +130,35 @@ func (s *SeedrAPI) FindID(filename string) (int, error) {
 }
 
 // Add adds a magnet link
-func (s *SeedrAPI) Add(magnet string) error {
+func (s *SeedrAPI) Add(magnet string) (seedr.Result, error) {
 	if s.client == nil {
 		s.client = &seedr.Client{
 			Username: s.Username,
 			Password: s.Password,
 		}
 	}
-	err := s.client.AddMagnet(magnet)
+	result, err := s.client.AddMagnet(magnet)
 	if err != nil {
-		return err
+		return seedr.Result{}, err
 	}
 
-	return nil
+	return result, nil
+}
+
+// AddTorrent adds a torrent URL
+func (s *SeedrAPI) AddTorrent(torrentUrl string) (seedr.Result, error) {
+	if s.client == nil {
+		s.client = &seedr.Client{
+			Username: s.Username,
+			Password: s.Password,
+		}
+	}
+	result, err := s.client.AddTorrent(torrentUrl)
+	if err != nil {
+		return seedr.Result{}, err
+	}
+
+	return result, nil
 }
 
 // GetPath returns the full path of the file in Seedr, for path replication locally

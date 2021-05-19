@@ -18,13 +18,15 @@ import (
 	"github.com/gorilla/mux"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/helper"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/pidcheck"
+	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/seedr"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/showrss"
 	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/yts"
 )
 
 // SeedrInstance is the instance
 type SeedrInstance interface {
-	Add(magnet string) error
+	Add(magnet string) (seedr.Result, error)
+	AddTorrent(torrent string) (seedr.Result, error)
 	DeleteFile(id int) error
 	DeleteFolder(id int) error
 	FindID(filename string) (int, error)
@@ -374,7 +376,7 @@ func AddMagnet(instance SeedrInstance, data Magnet, showID int) error {
 
 	if !dryRun {
 		fmt.Printf("Adding magnet for episode: %s\n", data.name)
-		err := instance.Add(data.link)
+		_, err := instance.Add(data.link)
 		if err != nil {
 			return err
 		}
@@ -464,13 +466,14 @@ type MainPageData struct {
 // RunMagnetApi is the api for adding magnet urls
 func (magnetApi *MagnetApi) RunMagnetApi() {
 	r := mux.NewRouter()
-	// r.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
-	// r.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("/assets"))))
 	r.HandleFunc("/gui", magnetApi.GuiHandler)
-	// r.HandleFunc("/assets", magnetApi.AssetsHandler)
 	r.HandleFunc("/api/ping", magnetApi.PingHandler)
 	r.HandleFunc("/api/magnet", magnetApi.AddMagnetHandler).Methods("POST")
+	r.HandleFunc("/api/torrent", magnetApi.AddTorrentHandler).Methods("POST")
 	log.Info(fmt.Sprintf("Magnet API running. Send JSON {link: url} as a POST request to x.x.x.x:%s/api/magnet to add directly to Seedr!", conf.Port))
+
+	// Serve static files
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
 
 	r.Use(APILoggingMiddleware)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", conf.Port), r))
@@ -479,6 +482,8 @@ func (magnetApi *MagnetApi) RunMagnetApi() {
 // AddMagnetHandler handles api calls adding magnets
 func (magnetApi *MagnetApi) AddMagnetHandler(w http.ResponseWriter, r *http.Request) {
 	var data ApiMagnet
+	var result seedr.Result
+
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&data); err != nil {
 		log.WithFields(log.Fields{
@@ -486,11 +491,46 @@ func (magnetApi *MagnetApi) AddMagnetHandler(w http.ResponseWriter, r *http.Requ
 		}).Warn("Error decoding JSON")
 	} else {
 		log.WithField("link", data.Link).Info("Adding Magnet/Torrent to Seedr")
-		magnetApi.AddRawMagnet(data.Link)
+		result, err = magnetApi.AddRawMagnet(data.Link)
+		if err != nil {
+			log.WithError(err)
+		}
 	}
+	resultData, err := json.Marshal(result)
+	if err != nil {
+		log.WithError(err)
+	}
+
 	w.WriteHeader(http.StatusOK)
-	// * dev code
-	// w.Write([]byte("Settin'\n"))
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(resultData)
+}
+
+// AddTorrentHandler handles api calls adding magnets
+func (magnetApi *MagnetApi) AddTorrentHandler(w http.ResponseWriter, r *http.Request) {
+	var data ApiMagnet
+	var result seedr.Result
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&data); err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Warn("Error decoding JSON")
+	} else {
+		log.WithField("link", data.Link).Info("Adding Magnet/Torrent to Seedr")
+		result, err = magnetApi.AddRawTorrent(data.Link)
+		if err != nil {
+			log.WithError(err)
+		}
+	}
+	resultData, err := json.Marshal(result)
+	if err != nil {
+		log.WithError(err)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(resultData)
 }
 
 // Load the web front end
@@ -518,10 +558,6 @@ func (magnetApi *MagnetApi) GuiHandler(w http.ResponseWriter, r *http.Request) {
 	// w.Write([]byte(data))
 }
 
-func (magnetApi *MagnetApi) AssetsHandler(w http.ResponseWriter, r *http.Request) {
-	http.FileServer(http.Dir("./assets"))
-}
-
 // PingHandler is just a quick test to ensure api calls are working.
 func (magnetApi *MagnetApi) PingHandler(w http.ResponseWriter, r *http.Request) {
 	log.Debug("Request sent to /api/ping")
@@ -530,16 +566,33 @@ func (magnetApi *MagnetApi) PingHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 // AddRawMagnet adds a magnet link to Seedr for downloading
-func (magnetApi *MagnetApi) AddRawMagnet(magnetLink string) error {
+func (magnetApi *MagnetApi) AddRawMagnet(magnetLink string) (seedr.Result, error) {
+	var result seedr.Result
+	var err error
 	if !dryRun {
 		fmt.Printf("Adding magnet : %s\n", magnetLink)
-		err := magnetApi.selectedSeedr.Add(magnetLink)
+		result, err = magnetApi.selectedSeedr.Add(magnetLink)
 		if err != nil {
-			return err
+			return seedr.Result{}, err
 		}
 	}
 
-	return nil
+	return result, nil
+}
+
+// AddRawTorrent adds a torrent link to Seedr for downloading
+func (magnetApi *MagnetApi) AddRawTorrent(torrentUrl string) (seedr.Result, error) {
+	var result seedr.Result
+	var err error
+	if !dryRun {
+		fmt.Printf("Adding torrent : %s\n", torrentUrl)
+		result, err = magnetApi.selectedSeedr.AddTorrent(torrentUrl)
+		if err != nil {
+			return seedr.Result{}, err
+		}
+	}
+
+	return result, nil
 }
 
 func APILoggingMiddleware(next http.Handler) http.Handler {

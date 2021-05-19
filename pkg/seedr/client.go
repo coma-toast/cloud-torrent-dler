@@ -28,6 +28,15 @@ type Error struct {
 	CallResponse *http.Response
 }
 
+// Result is the API Result
+type Result struct {
+	Result          bool   `json:"result"`
+	Code            int    `json:"code"`
+	User_torrent_id int    `json:"user_torrent_id"`
+	Title           string `json:"title"`
+	Torrent_hash    string `json:"torrent_hash"`
+}
+
 var baseURL = "https://www.seedr.cc/rest"
 
 func (e Error) Error() string {
@@ -89,7 +98,11 @@ func (c *Client) call(method string, url string, payload interface{}, target int
 
 	if payload != nil {
 		if method == http.MethodPost {
-			postData = fmt.Sprintf("------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"magnet\"\r\n\r\n%s\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--", payload)
+			if strings.HasPrefix(fmt.Sprintf("%v", payload), "magnet:?") {
+				postData = fmt.Sprintf("------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"magnet\"\r\n\r\n%s\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--", payload)
+			} else {
+				postData = fmt.Sprintf("------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"torrent_url\"\r\n\r\n%s\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--", payload)
+			}
 		}
 	}
 	request, err := http.NewRequest(method, url, strings.NewReader(postData))
