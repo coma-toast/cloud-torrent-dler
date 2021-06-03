@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/gorilla/mux"
@@ -476,7 +475,10 @@ func (magnetApi *MagnetApi) RunMagnetApi() {
 	log.Info(fmt.Sprintf("Magnet API running. Send JSON {link: url} as a POST request to x.x.x.x:%s/api/magnet to add directly to Seedr!", conf.Port))
 
 	cwd, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	spew.Dump(cwd, err)
+	if err != nil {
+		log.WithField("error", err).Warn("Error getting root directory. Static files may not be served.")
+	}
+
 	// Serve static files
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(cwd+"/static/"))))
 
