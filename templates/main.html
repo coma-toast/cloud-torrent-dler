@@ -43,7 +43,8 @@
                                         {{ range .Movies }}
                                         <tr>
                                             <td>
-                                                {{ .Title }}
+                                                <p><b><a href="https://www.imdb.com/title/{{ .Imdb_code}}">{{ .Title }}</b></p>
+                                                <img src="{{ .Medium_cover_image }}"></a>
                                             </td>
                                             <td>
                                                 {{ .Year }}
