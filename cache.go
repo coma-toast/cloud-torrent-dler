@@ -54,6 +54,13 @@ func (c *Cache) Get(key string) DownloadItem {
 	return c.state[key]
 }
 
+// GetAll retrieves all data from the cache
+func (c *Cache) GetAll() map[string]DownloadItem {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	return c.state
+}
+
 // IsSet determines if the item exists already
 func (c *Cache) IsSet(key string) bool {
 	key = helper.SanitizeText(key)

@@ -461,6 +461,7 @@ type MagnetApi struct {
 
 type MainPageData struct {
 	Movies []yts.Movie
+	Shows  []showrss.Item
 }
 
 // RunMagnetApi is the api for adding magnet urls
@@ -548,8 +549,15 @@ func (magnetApi *MagnetApi) GuiHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.WithField("error", err).Warn("Error getting Movie Data from YTS")
 	}
+
+	showData, err := showrss.GetAllEpisodeItems(conf.ShowRSS)
+	if err != nil {
+		log.WithField("error", err).Warn("Error getting Show Data from ShowRSS")
+	}
+
 	data := MainPageData{
 		Movies: movieData,
+		Shows:  showData,
 	}
 
 	templateMain.Execute(w, data)
