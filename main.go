@@ -9,10 +9,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/gorilla/mux"
@@ -473,8 +475,10 @@ func (magnetApi *MagnetApi) RunMagnetApi() {
 	r.HandleFunc("/api/torrent", magnetApi.AddTorrentHandler).Methods("POST")
 	log.Info(fmt.Sprintf("Magnet API running. Send JSON {link: url} as a POST request to x.x.x.x:%s/api/magnet to add directly to Seedr!", conf.Port))
 
+	cwd, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	spew.Dump(cwd, err)
 	// Serve static files
-	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(cwd+"/static/"))))
 
 	// r.Use(APILoggingMiddleware)
 	log.Error(http.ListenAndServe(fmt.Sprintf(":%s", conf.Port), r))
