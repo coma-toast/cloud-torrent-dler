@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous"></script>
+    <script src="/static/main.js"></script>
+</head>
+
+<!-- https://getbootstrap.com/docs/5.0/components/navs-tabs/ -->
+
+<body>
+    <div class="container-fluid">
+        <table id="showListTable" class="table table-striped table-hover table-sm">
+            <thead>
+                <tr>
+                    <th>Show</th>
+                    <th>Title</th>
+                    <th>Date</th>
+                    <th>Add to Seedr</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ range $index, $show := .Items }}
+                <tr>
+                    <td><b>{{ $show.TVShowName }}</b></td>
+                    <td>{{ $show.Title }}</td>
+                    <td>{{ $show.PubDate }}</td>
+                    <td><button class="btn btn-success download-magnet" data-torrent="{{ $show.Link }}">Add</button></td>
+                </tr>
+                {{ end }}
+            </tbody>
+        </table>
+    </div>
+</body>

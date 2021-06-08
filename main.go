@@ -465,6 +465,11 @@ type MainPageData struct {
 	Shows  []showrss.Item
 }
 
+type ShowPageData struct {
+	Show  string
+	Items []showrss.Item
+}
+
 // RunMagnetApi is the api for adding magnet urls
 func (magnetApi *MagnetApi) RunMagnetApi() {
 	r := mux.NewRouter()
@@ -472,6 +477,7 @@ func (magnetApi *MagnetApi) RunMagnetApi() {
 	r.HandleFunc("/api/ping", magnetApi.PingHandler)
 	r.HandleFunc("/api/magnet", magnetApi.AddMagnetHandler).Methods("POST")
 	r.HandleFunc("/api/torrent", magnetApi.AddTorrentHandler).Methods("POST")
+	r.HandleFunc("/api/show/{showID}", magnetApi.ShowHandler).Methods("GET")
 	log.Info(fmt.Sprintf("Magnet API running. Send JSON {link: url} as a POST request to x.x.x.x:%s/api/magnet to add directly to Seedr!", conf.Port))
 
 	cwd, err := filepath.Abs(filepath.Dir(os.Args[0]))
@@ -538,6 +544,33 @@ func (magnetApi *MagnetApi) AddTorrentHandler(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(resultData)
+}
+
+// ShowHandler handles api calls to pull a show from ShowRSS
+func (magnetApi *MagnetApi) ShowHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	showID := vars["showID"]
+	var result showrss.Shows
+	var err error
+
+	log.WithField("link", showID).Info("Getting all ShowRSS data")
+	result, err = magnetApi.GetFullShow(showID)
+	if err != nil {
+		log.WithError(err)
+	}
+
+	templateShow := template.Must(template.ParseFiles(conf.CachePath + "/templates/show.html"))
+
+	data := ShowPageData{
+		Show:  result.Title,
+		Items: result.Item,
+	}
+
+	templateShow.Execute(w, data)
+
+	// w.WriteHeader(http.StatusOK)
+	// w.Header().Set("Content-Type", "application/json")
+	// w.Write(resultData)
 }
 
 // Load the web front end
@@ -607,6 +640,16 @@ func (magnetApi *MagnetApi) AddRawTorrent(torrentUrl string) (seedr.Result, erro
 	}
 
 	return result, nil
+}
+
+func (magnetApi *MagnetApi) GetFullShow(showID string) (showrss.Shows, error) {
+	url := fmt.Sprintf("https://showrss.info/show/%s.rss", showID)
+	data, err := showrss.GetShows(url)
+	if err != nil {
+		return showrss.Shows{}, err
+	}
+
+	return data, nil
 }
 
 func APILoggingMiddleware(next http.Handler) http.Handler {

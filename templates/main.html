@@ -106,7 +106,7 @@
                                         <tbody>
                                             {{ range $index, $show := .Shows }}
                                             <tr>
-                                                <td><b>{{ $show.TVShowName }}</b></td>
+                                                <td><a href="/api/show/{{ $show.TVShowID }}"><b>{{ $show.TVShowName }}</b></a></td>
                                                 <td>{{ $show.Title }}</td>
                                                 <td>{{ $show.PubDate }}</td>
                                                 <td>{{ $show.Description }}</td>

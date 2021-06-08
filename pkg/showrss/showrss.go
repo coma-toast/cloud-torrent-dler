@@ -62,6 +62,20 @@ func GetShowInfoByEpisodeID(url string, id int) Item {
 	return Item{}
 }
 
+// func GetFullShow(url string) ([]Item, error) {
+
+// 	var err error
+// 	xmlBytes, err := getXML(url)
+// 	if err != nil {
+// 		return []Item{}, err
+// 	}
+
+// 	if err = xml.Unmarshal(xmlBytes, &result); err != nil {
+// 		return []Item{}, err
+// 	}
+
+// }
+
 func getXML(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
