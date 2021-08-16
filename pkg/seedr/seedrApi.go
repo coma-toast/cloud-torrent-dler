@@ -108,7 +108,7 @@ func (c Client) downloadFile(url string, destination string) error {
 func (c Client) AddMagnet(magnet string) (Result, error) {
 	var err error
 	var resultData Result
-	url := fmt.Sprintf("/torrent/magnet")
+	url := "/torrent/magnet"
 	result, err := c.call(http.MethodPost, url, magnet, nil)
 	if err != nil {
 		log.WithError(err)
@@ -125,7 +125,7 @@ func (c Client) AddMagnet(magnet string) (Result, error) {
 func (c Client) AddTorrent(torrentUrl string) (Result, error) {
 	var err error
 	var resultData Result
-	url := fmt.Sprintf("/torrent/url")
+	url := "/torrent/url"
 	result, err := c.call(http.MethodPost, url, torrentUrl, nil)
 	if err != nil {
 		log.WithError(err)

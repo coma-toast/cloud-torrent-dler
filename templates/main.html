@@ -92,6 +92,19 @@
                                 <div class="row">
                                     <div class="col-sm-9">
                                         <h3>Shows</h3>
+                                        <div>
+                                            View all available episodes:
+                                            <div class="dropdown">
+                                                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    Select a Show<span class="caret"></span>
+                                                </button>
+                                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                                                    {{ range $index, $show := .ShowList }}
+                                                    <li><a class="dropdown-item" href="/api/show/{{ $show.TVShowID }}">{{ $show.TVShowName }}</a></li>
+                                                    {{ end }}
+                                                </ul>
+                                            </div>
+                                        </div>
                                     </div>
                                     <table id="showsTable" class="table table-striped table-hover table-sm">
                                         <thead>

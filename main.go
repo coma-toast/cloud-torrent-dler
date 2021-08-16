@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -461,8 +462,9 @@ type MagnetApi struct {
 }
 
 type MainPageData struct {
-	Movies []yts.Movie
-	Shows  []showrss.Item
+	Movies   []yts.Movie
+	Shows    []showrss.Item
+	ShowList []showrss.Item
 }
 
 type ShowPageData struct {
@@ -594,9 +596,52 @@ func (magnetApi *MagnetApi) GuiHandler(w http.ResponseWriter, r *http.Request) {
 		log.WithField("error", err).Warn("Error getting Show Data from ShowRSS")
 	}
 
+	showList := []showrss.Item{}
+	// Get list of "all" shows (only the latest X number of shows)
+	showsListAllData, err := showrss.GetShows("https://showrss.info/other/all.rss")
+	if err != nil {
+		log.WithField("error", err).Warn("Error getting Show List from ShowRSS")
+	}
+
+	// Get a list of all subscribed shows
+	showsListSubscribedData, err := showrss.GetShows(conf.ShowRSS)
+	if err != nil {
+		log.WithField("error", err).Warn("Error getting Show List from ShowRSS")
+	}
+
+	for _, item := range showsListAllData.Item {
+		add := true
+		for _, addedItem := range showList {
+			if addedItem.TVShowID == item.TVShowID {
+				add = false
+			}
+		}
+		if add {
+			showList = append(showList, item)
+		}
+	}
+
+	for _, item := range showsListSubscribedData.Item {
+		add := true
+		for _, addedItem := range showList {
+			if addedItem.TVShowID == item.TVShowID {
+				add = false
+			}
+		}
+		if add {
+			showList = append(showList, item)
+		}
+	}
+
+	sort.SliceStable(showList, func(i, j int) bool {
+		return showList[i].TVShowName < showList[j].TVShowName
+	})
+	// test, err := leetx.Lookup("ace", 15*time.Second)
+	// spew.Dump(test)
 	data := MainPageData{
-		Movies: movieData,
-		Shows:  showData,
+		Movies:   movieData,
+		Shows:    showData,
+		ShowList: showList,
 	}
 
 	templateMain.Execute(w, data)
