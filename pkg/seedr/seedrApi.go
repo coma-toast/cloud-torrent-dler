@@ -78,12 +78,16 @@ func (c Client) DownloadFileByID(id int, destination string) error {
 func (c Client) downloadFile(url string, destination string) error {
 	var err error
 	f, err := os.Create(destination)
-	defer f.Close()
 	if err != nil {
 		spew.Dump("Error in downloadFile() creating destination file: ", err)
 		return err
 	}
+	defer f.Close()
 	response, err := c.stream(http.MethodGet, url, nil)
+	if err != nil {
+		log.WithField("error", err).Debug("Error getting stream response")
+		return err
+	}
 	defer response.Body.Close()
 	if err != nil {
 		spew.Dump("Error in downloadFile() getting stream: ", err)
