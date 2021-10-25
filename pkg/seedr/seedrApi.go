@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/davecgh/go-spew/spew"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -66,7 +65,7 @@ func (c Client) GetFile(id int) (File, error) {
 func (c Client) DownloadFileByID(id int, destination string) error {
 	var err error
 	url := fmt.Sprintf("/file/%d", id)
-	spew.Dump(id, url, destination)
+	log.Debug(id, url, destination)
 	err = c.downloadFile(url, destination)
 	if err != nil {
 		return err
@@ -79,7 +78,7 @@ func (c Client) downloadFile(url string, destination string) error {
 	var err error
 	f, err := os.Create(destination)
 	if err != nil {
-		spew.Dump("Error in downloadFile() creating destination file: ", err)
+		log.Debug("Error in downloadFile() creating destination file: ", err)
 		return err
 	}
 	defer f.Close()
@@ -90,16 +89,16 @@ func (c Client) downloadFile(url string, destination string) error {
 	}
 	defer response.Body.Close()
 	if err != nil {
-		spew.Dump("Error in downloadFile() getting stream: ", err)
+		log.Debug("Error in downloadFile() getting stream: ", err)
 		return err
 	}
 
 	bytes, err := io.Copy(f, response.Body)
 	if err != nil {
-		spew.Dump("Error in downloadFile() copying to destination: ", err)
+		log.Debug("Error in downloadFile() copying to destination: ", err)
 		return err
 	}
-	spew.Dump("bytes written: :", bytes)
+	log.Debug("bytes written: :", bytes)
 
 	return err
 }
