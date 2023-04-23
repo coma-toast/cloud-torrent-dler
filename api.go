@@ -207,7 +207,8 @@ func (s *SeedrAPI) getFolderIDFromPath(path string) (int, error) {
 		}
 	}
 
-	err = fmt.Errorf("Path not found: %s", path)
+	err = fmt.Errorf("path not found: %s. invalidating folder mapping", path)
+	s.folderMapping = make(map[int]string)
 
 	return 0, err
 }
@@ -229,7 +230,8 @@ func (s *SeedrAPI) getFileIDFromPath(path string) (int, error) {
 		}
 	}
 
-	err = fmt.Errorf("Path not found: %s", path)
+	err = fmt.Errorf("path not found: %s. invalidating folder mapping", path)
+	s.folderMapping = make(map[int]string)
 
 	return 0, err
 }

@@ -35,7 +35,7 @@ func (c *Cache) Set(key string, value DownloadItem) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	key = helper.SanitizeText(key)
-	fmt.Printf("Setting cache: %s\n", key)
+	// fmt.Printf("Setting cache: %s\n", key)
 	c.state[key] = value
 	err := jsonio.WriteFile(c.path, c.state)
 	if err != nil {
@@ -48,7 +48,7 @@ func (c *Cache) Set(key string, value DownloadItem) error {
 // Get retrieves data from the cache
 func (c *Cache) Get(key string) DownloadItem {
 	key = helper.SanitizeText(key)
-	fmt.Printf("Getting cache: %s\n", key)
+	// fmt.Printf("Getting cache: %s\n", key)
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	return c.state[key]

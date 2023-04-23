@@ -147,10 +147,10 @@ func main() {
 				okToDeleteFolder := false
 				isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", unsortedItem.Name)
 				if isAVideo {
-					name := helper.SanitizeText(string(unsortedItem.Name[0 : len(unsortedItem.Name)-4]))
-					itemCacheData := cache.Get(name)
-					_ = itemCacheData
-					setCacheSeedrInfo(selectedSeedr, conf.CompletedFolders[0], &unsortedItem)
+					// name := helper.SanitizeText(string(unsortedItem.Name[0 : len(unsortedItem.Name)-4]))
+					// itemCacheData := cache.Get(name)
+					// _ = itemCacheData
+					setCacheSeedrInfo(selectedSeedr, "", &unsortedItem)
 					if unsortedItem.ShowID != 0 {
 						path := fmt.Sprintf("%s/%s", conf.DlRoot, conf.CompletedFolders[0])
 						if unsortedItem.TVShowName != "" {
@@ -415,6 +415,7 @@ func findAllToDownload(instance SeedrInstance, path string, ftp bool) ([]Downloa
 	files, err := instance.List(path)
 
 	if err != nil {
+		// instance.List("")
 		return []DownloadItem{}, err
 	}
 	downloads := []DownloadItem{}
