@@ -6,3 +6,4 @@ cloud-torrent-dler
 var/
 cache.json
 log/
+chrome-extension/node_modules

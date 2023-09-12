@@ -49,6 +49,7 @@ func replaceText(input string) string {
 	output = strings.ReplaceAll(output, "[", "")
 	output = strings.ReplaceAll(output, "]", "")
 	output = strings.ReplaceAll(output, "rarbg", "")
+	output = strings.ReplaceAll(output, "eztv re", "")
 	// " -" now becomes "  " which is not right. Make it single space
 	output = strings.ReplaceAll(output, "   ", " ")
 	output = strings.ReplaceAll(output, "  ", " ")
