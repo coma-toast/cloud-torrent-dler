@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "outDir": "chrome-extension/dist",
+        "module": "ESNext",
+        "moduleResolution": "node",
+        "target": "ES6",
+        "lib": ["ESNext", "DOM", "DOM.Iterable"],
+        "typeRoots": ["chrome-extension/node_modules/@types"]
+    },
+    "include": ["chrome-extension/**/*"]
+}
