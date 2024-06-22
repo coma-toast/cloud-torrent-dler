@@ -14,7 +14,9 @@ import (
 // AlreadyRunning determines if there is a process already running
 func AlreadyRunning(pidFile string) bool {
 	// Read in the pid file as a slice of bytes.
-	pidData, err := ioutil.ReadFile(pidFile)
+	pidData, err := os.ReadFile(pidFile)
+	log.Info(pidFile)
+	log.Info(string(pidData))
 	if err != nil {
 		if strings.Contains(err.Error(), "no such file or directory") {
 			err = writePid(pidFile)
@@ -50,6 +52,7 @@ func AlreadyRunning(pidFile string) bool {
 
 	// Look for the pid in the process list.
 	process, err := os.FindProcess(pid)
+	log.Info(process, err)
 	if err != nil {
 		fmt.Println(err)
 		return true
