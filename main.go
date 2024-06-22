@@ -99,7 +99,7 @@ func main() {
 
 	selectedSeedr := conf.GetSeedrInstance()
 
-	pidPath := fmt.Sprintf("%s/cloud-torrent-downloader", conf.PidFilePath)
+	pidPath := filepath.Join(conf.PidFilePath, "cloud-torrent-downloader")
 	pid := pidcheck.AlreadyRunning(pidPath)
 	if pid {
 		log.Fatal("App already running. Exiting.")
@@ -134,6 +134,8 @@ func main() {
 	// downloadWorker()
 	// Channel so we can continuously monitor new episodes being added to showrss
 
+	// * HERE - added magnetlink package so i can get more data from the magnets
+	// * so i can better create folders and match and stuff. go-torrent might be good too
 	go func() {
 		for range time.NewTicker(downloadLoopTime).C {
 			deleteQueue := make(map[string]int)
@@ -481,6 +483,9 @@ func (magnetApi *MagnetApi) RunMagnetApi() {
 	r.HandleFunc("/api/magnet", magnetApi.AddMagnetHandler).Methods("POST")
 	r.HandleFunc("/api/torrent", magnetApi.AddTorrentHandler).Methods("POST")
 	r.HandleFunc("/api/show/{showID}", magnetApi.ShowHandler).Methods("GET")
+	r.HandleFunc("/api/data/show", magnetApi.DataShowHandler).Methods("GET")
+	// r.HandleFunc("/api/data/show/{showID}", magnetApi.DataShowByIDHandler).Methods("GET")
+	// r.HandleFunc("/api/data/show/{showID}", magnetApi.DataShowByIDHandler).Methods("POST")
 	log.Info(fmt.Sprintf("Magnet API running. Send JSON {link: url} as a POST request to x.x.x.x:%s/api/magnet to add directly to Seedr!", conf.Port))
 
 	cwd, err := filepath.Abs(filepath.Dir(os.Args[0]))
@@ -574,6 +579,22 @@ func (magnetApi *MagnetApi) ShowHandler(w http.ResponseWriter, r *http.Request) 
 	// w.WriteHeader(http.StatusOK)
 	// w.Header().Set("Content-Type", "application/json")
 	// w.Write(resultData)
+}
+
+func (magnetApi *MagnetApi) DataShowHandler(w http.ResponseWriter, r *http.Request) {
+	var result map[string]DownloadItem
+	var err error
+
+	result = cache.GetAll()
+
+	resultData, err := json.Marshal(result)
+	if err != nil {
+		log.WithError(err)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(resultData)
 }
 
 // Load the web front end
