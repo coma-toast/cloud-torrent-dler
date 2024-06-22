@@ -77,11 +77,11 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 	date := time.Now().Format("01-02-2006")
-	err := os.MkdirAll(conf.CachePath+"/log", 0777)
+	err := os.MkdirAll(filepath.Join(conf.CachePath, "log"), 0777)
 	if err != nil {
 		log.WithField("error", err).Warn("Unable to create log directory")
 	}
-	fileLocation := fmt.Sprintf("%s/log/ctd-%s.log", conf.CachePath, date)
+	fileLocation := filepath.Join(conf.CachePath, "log", fmt.Sprintf("ctd-%s.log", date))
 	file, err := os.OpenFile(fileLocation, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
 	if err == nil {
 		log.SetOutput(io.MultiWriter(file, os.Stdout))
@@ -154,9 +154,9 @@ func main() {
 					// _ = itemCacheData
 					setCacheSeedrInfo(selectedSeedr, "", &unsortedItem)
 					if unsortedItem.ShowID != 0 {
-						path := fmt.Sprintf("%s/%s", conf.DlRoot, conf.CompletedFolders[0])
+						path := filepath.Join(conf.DlRoot, conf.CompletedFolders[0])
 						if unsortedItem.TVShowName != "" {
-							path = fmt.Sprintf("%s/%s", path, unsortedItem.TVShowName)
+							path = filepath.Join(path, unsortedItem.TVShowName)
 						}
 						log.WithFields(log.Fields{
 							"show":        unsortedItem.TVShowName,
@@ -207,7 +207,7 @@ func main() {
 					if isAVideo {
 						dataLog(item, "Setting cache for item")
 						setCacheSeedrInfo(selectedSeedr, downloadFolder, &item)
-						localPath := fmt.Sprintf("%s/%s", conf.DlRoot, item.FolderPath)
+						localPath := filepath.Join(conf.DlRoot, item.FolderPath)
 						thisShouldBeDownloaded := shouldThisBeDownloaded(localPath + item.Name)
 						if thisShouldBeDownloaded {
 							dataLog(item, "Item will be downloaded")
