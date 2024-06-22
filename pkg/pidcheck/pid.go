@@ -15,8 +15,6 @@ import (
 func AlreadyRunning(pidFile string) bool {
 	// Read in the pid file as a slice of bytes.
 	pidData, err := os.ReadFile(pidFile)
-	log.Info(pidFile)
-	log.Info(string(pidData))
 	if err != nil {
 		if strings.Contains(err.Error(), "no such file or directory") {
 			err = writePid(pidFile)
@@ -52,8 +50,11 @@ func AlreadyRunning(pidFile string) bool {
 
 	// Look for the pid in the process list.
 	process, err := os.FindProcess(pid)
-	log.Info(process, err)
+	log.Info(err)
 	if err != nil {
+		if err.Error() == "OpenProcess: The parameter is incorrect." {
+			return false
+		}
 		fmt.Println(err)
 		return true
 	}
