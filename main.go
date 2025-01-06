@@ -17,14 +17,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/pidcheck"
+	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/showrss"
+	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/yts"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/coma-toast/cloud-torrent-dler/pkg/cache"
-	"github.com/coma-toast/cloud-torrent-dler/pkg/helper"
-	"github.com/coma-toast/cloud-torrent-dler/pkg/pidcheck"
-	"github.com/coma-toast/cloud-torrent-dler/pkg/seedr"
-	"github.com/coma-toast/cloud-torrent-dler/pkg/showrss"
-	"github.com/coma-toast/cloud-torrent-dler/pkg/yts"
 	"github.com/gorilla/mux"
 )
 

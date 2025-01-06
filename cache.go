@@ -3,9 +3,6 @@ package main
 import (
 	"path/filepath"
 	"sync"
-
-	"github.com/coma-toast/cloud-torrent-dler/pkg/helper"
-	"github.com/coma-toast/cloud-torrent-dler/pkg/jsonio"
 )
 
 // Cache is the cache for storing episode lists

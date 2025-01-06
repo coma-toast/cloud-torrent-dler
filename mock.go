@@ -1,7 +1,5 @@
 package main
 
-import "github.com/coma-toast/cloud-torrent-dler/pkg/seedr"
-
 type mockSeedrInstance struct {
 }
 

@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-
-	"github.com/coma-toast/cloud-torrent-dler/pkg/cache"
-	"github.com/coma-toast/cloud-torrent-dler/pkg/seedr"
 )
 
 // SeedrAPI is the struct for API
