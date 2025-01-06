@@ -1,132 +1,183 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+    <head>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0"
+            crossorigin="anonymous"
+        />
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4"
+            crossorigin="anonymous"
+        ></script>
+        <script src="/dist/main.js"></script>
+    </head>
 
-<head>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous"></script>
-    <script src="/static/main.js"></script>
-</head>
+    <!-- https://getbootstrap.com/docs/5.0/components/navs-tabs/ -->
 
-<!-- https://getbootstrap.com/docs/5.0/components/navs-tabs/ -->
+    <body>
+        <div class="container-fluid">
+            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button
+                        class="nav-link active"
+                        id="ho`me-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#movies"
+                        type="button"
+                        role="tab"
+                        aria-controls="home"
+                        aria-selected="true"
+                    >
+                        Movies
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button
+                        class="nav-link"
+                        id="profile-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#shows"
+                        type="button"
+                        role="tab"
+                        aria-controls="profile"
+                        aria-selected="false"
+                    >
+                        Shows
+                    </button>
+                </li>
+            </ul>
 
-<body>
-    <div class="container-fluid">
-        <ul class="nav nav-tabs" id="myTab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#movies" type="button" role="tab" aria-controls="home" aria-selected="true">Movies</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#shows" type="button" role="tab" aria-controls="profile" aria-selected="false">Shows</button>
-            </li>
-        </ul>
-        <div class="tab-content" id="Content">
-            <div class="tab-pane fade show active" id="movies" role="tabpanel">
-                <div class="row">
-                    <div class="table-responsive">
-                        <div class="table-wrapper-scroll-y">
-                            <div class="table-title">
-                                <div class="row">
-                                    <div class="col-sm-9">
-                                        <h3>Movies</h3>
-                                    </div>
-                                </div>
-                                <table id="moviesTable" class="table table-striped table-hover table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Title</th>
-                                            <th>Year</th>
-                                            <th>Rating</th>
-                                            <th>Add to Seedr</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {{ range .Movies }}
-                                        <tr>
-                                            <td>
-                                                <p><b><a href="https://www.imdb.com/title/{{ .Imdb_code}}">{{ .Title }}</b></p>
-                                                <img src="{{ .Medium_cover_image }}"></a>
-                                            </td>
-                                            <td>
-                                                {{ .Year }}
-                                            </td>
-                                            <td>
-                                                {{ .Rating }}
-                                            </td>
-                                            <td>
-                                                <table class="table table-striped table-hover table-sm">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Quality</th>
-                                                            <th>Seeders</th>
-                                                            <th>Leechers</th>
-                                                            <th>Upload Date</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-
-                                                        {{ range .Torrents }}
-                                                        <tr>
-                                                            <td><button class="btn btn-success download" data-torrent="{{ .Url}}">{{ .Quality }}</button></td>
-                                                            <td>{{ .Seeds }}</td>
-                                                            <td>{{ .Peers }}</td>
-                                                            <td>{{ .Date_uploaded }}</td>
-                                                        </tr>
-                                                        {{ end }}
-                                                    </tbody>
-                                                </table>
-                                            </td>
-                                        </tr>
-                                        {{ end }}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+            <div class="tab-content" id="Content">
+                <div
+                    class="tab-pane fade show active"
+                    id="movies"
+                    role="tabpanel"
+                >
+                    <div class="form-group mx-sm-3 mb-2">
+                        <label for="search" class="sr-only">Search</label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="search"
+                            placeholder=""
+                        />
                     </div>
-                </div>
-            </div>
-            <div class="tab-pane fade" role="tabpanel" id="shows">
-                <div class="row">
-                    <div class="table-responsive">
-                        <div class="table-wrapper-scroll-y">
-                            <div class="table-title">
-                                <div class="row">
-                                    <div class="col-sm-9">
-                                        <h3>Shows</h3>
-                                        <div>
-                                            View all available episodes:
-                                            <div class="dropdown">
-                                                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-                                                    Select a Show<span class="caret"></span>
-                                                </button>
-                                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                                                    {{ range $index, $show := .ShowList }}
-                                                    <li><a class="dropdown-item" href="/api/show/{{ $show.TVShowID }}">{{ $show.TVShowName }}</a></li>
-                                                    {{ end }}
-                                                </ul>
-                                            </div>
+                    <button
+                        type="submit"
+                        id="search-button"
+                        class="btn btn-success"
+                    >
+                        Search
+                    </button>
+
+                    <div class="search-results">
+                        <h3>Search Results</h3>
+                        <div id="search-results">
+                            <span id="search-message"></span>
+                        </div>
+                        <table
+                            id="movie-table"
+                            class="table table-striped table-hover table-sm"
+                        >
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Year</th>
+                                    <th>Rating</th>
+                                    <th>Add to Seedr</th>
+                                </tr>
+                            </thead>
+                            <tbody id="movie-table-body"></tbody>
+                        </table>
+                    </div>
+                    <div class="row">
+                        <div class="table-responsive">
+                            <div class="table-wrapper-scroll-y">
+                                <div class="table-title">
+                                    <div class="row">
+                                        <div class="col-sm-9">
+                                            <h2>Latest Movies</h2>
                                         </div>
                                     </div>
-                                    <table id="showsTable" class="table table-striped table-hover table-sm">
+                                    <table
+                                        id="moviesTable"
+                                        class="table table-striped table-hover table-sm"
+                                    >
                                         <thead>
                                             <tr>
-                                                <th>Show</th>
                                                 <th>Title</th>
-                                                <th>Date</th>
-                                                <th>Description</th>
+                                                <th>Year</th>
+                                                <th>Rating</th>
                                                 <th>Add to Seedr</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {{ range $index, $show := .Shows }}
+                                            {{ range .Movies }}
                                             <tr>
-                                                <td><a href="/api/show/{{ $show.TVShowID }}"><b>{{ $show.TVShowName }}</b></a></td>
-                                                <td>{{ $show.Title }}</td>
-                                                <td>{{ $show.PubDate }}</td>
-                                                <td>{{ $show.Description }}</td>
-                                                <td><button class="btn btn-success download-magnet" data-torrent="{{ $show.Link }}">Add</button></td>
+                                                <td>
+                                                    <p>
+                                                        <b>{{ .Title }}</b>
+                                                    </p>
+                                                    <a
+                                                        href="https://www.imdb.com/title/{{ .Imdb_code }}"
+                                                    >
+                                                        <img
+                                                            src="{{ .Medium_cover_image }}"
+                                                    /></a>
+                                                </td>
+                                                <td>{{ .Year }}</td>
+                                                <td>{{ .Rating }}</td>
+                                                <td>
+                                                    <table
+                                                        class="table table-striped table-hover table-sm"
+                                                    >
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Quality</th>
+                                                                <th>Seeders</th>
+                                                                <th>
+                                                                    Leechers
+                                                                </th>
+                                                                <th>
+                                                                    Upload Date
+                                                                </th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {{ range .Torrents
+                                                            }}
+                                                            <tr>
+                                                                <td>
+                                                                    <button
+                                                                        class="btn btn-success download"
+                                                                        data-torrent="{{ .Url}}"
+                                                                    >
+                                                                        {{
+                                                                        .Quality
+                                                                        }}
+                                                                    </button>
+                                                                </td>
+                                                                <td>
+                                                                    {{ .Seeds }}
+                                                                </td>
+                                                                <td>
+                                                                    {{ .Peers }}
+                                                                </td>
+                                                                <td>
+                                                                    {{
+                                                                    .Date_uploaded
+                                                                    }}
+                                                                </td>
+                                                            </tr>
+                                                            {{ end }}
+                                                        </tbody>
+                                                    </table>
+                                                </td>
                                             </tr>
                                             {{ end }}
-
                                         </tbody>
                                     </table>
                                 </div>
@@ -134,7 +185,99 @@
                         </div>
                     </div>
                 </div>
+                <div class="tab-pane fade" role="tabpanel" id="shows">
+                    <div class="row">
+                        <div class="table-responsive">
+                            <div class="table-wrapper-scroll-y">
+                                <div class="table-title">
+                                    <div class="row">
+                                        <div class="col-sm-9">
+                                            <h3>Shows</h3>
+                                            <div>
+                                                View all available episodes:
+                                                <div class="dropdown">
+                                                    <button
+                                                        class="btn btn-secondary dropdown-toggle"
+                                                        type="button"
+                                                        id="dropdownMenuButton1"
+                                                        data-bs-toggle="dropdown"
+                                                        aria-expanded="false"
+                                                    >
+                                                        Select a Show<span
+                                                            class="caret"
+                                                        ></span>
+                                                    </button>
+                                                    <ul
+                                                        class="dropdown-menu"
+                                                        aria-labelledby="dropdownMenuButton1"
+                                                    >
+                                                        {{ range $index, $show
+                                                        := .ShowList }}
+                                                        <li>
+                                                            <a
+                                                                class="dropdown-item"
+                                                                href="/api/show/{{ $show.TVShowID }}"
+                                                                >{{
+                                                                $show.TVShowName
+                                                                }}</a
+                                                            >
+                                                        </li>
+                                                        {{ end }}
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <table
+                                            id="showsTable"
+                                            class="table table-striped table-hover table-sm"
+                                        >
+                                            <thead>
+                                                <tr>
+                                                    <th>Show</th>
+                                                    <th>Title</th>
+                                                    <th>Date</th>
+                                                    <th>Description</th>
+                                                    <th>Add to Seedr</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {{ range $index, $show := .Shows
+                                                }}
+                                                <tr>
+                                                    <td>
+                                                        <a
+                                                            href="/api/show/{{ $show.TVShowID }}"
+                                                            ><b
+                                                                >{{
+                                                                $show.TVShowName
+                                                                }}</b
+                                                            ></a
+                                                        >
+                                                    </td>
+                                                    <td>{{ $show.Title }}</td>
+                                                    <td>{{ $show.PubDate }}</td>
+                                                    <td>
+                                                        {{ $show.Description }}
+                                                    </td>
+                                                    <td>
+                                                        <button
+                                                            class="btn btn-success download-magnet"
+                                                            data-torrent="{{ $show.Link }}"
+                                                        >
+                                                            Add
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                {{ end }}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</body>
+    </body>
+</html>

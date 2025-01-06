@@ -1,6 +1,6 @@
 package main
 
-import "gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/seedr"
+import "github.com/coma-toast/cloud-torrent-dler/pkg/seedr"
 
 type mockSeedrInstance struct {
 }
