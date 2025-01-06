@@ -1,0 +1,49 @@
+{
+    "name": "Cloud-Torrent-DLer",
+    "description": "CTD Extension",
+    "version": "1.0",
+    "manifest_version": 3,
+    "host_permissions": ["https://*.magnetdl.com/*"],
+    "background": {
+        "service_worker": "dist/background.js",
+        "type": "module"
+    },
+    "content_scripts": [
+        {
+            "matches": ["https://*.magnetdl.com/*"],
+            "js": ["dist/contentScript.js"]
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "images/cloud-storage-128x128.png",
+                "images/cloud-storage-16x16.png",
+                "images/cloud-storage-32x32.png",
+                "images/cloud-storage-48x48.png",
+                "images/cloud-storage.png",
+                "images/error.png",
+                "images/loading.png"
+            ],
+            "matches": ["https://*.magnetdl.com/*"]
+        }
+    ],
+    "permissions": ["storage", "tabs", "scripting"],
+    "action": {
+        "default_title": "Add Download Icons",
+        "default_popup": "popup.html",
+        "default_icon": {
+            "16": "/images/cloud-storage-16x16.png",
+            "32": "/images/cloud-storage-32x32.png",
+            "48": "/images/cloud-storage-48x48.png",
+            "128": "/images/cloud-storage-128x128.png"
+        }
+    },
+    "icons": {
+        "16": "/images/cloud-storage-16x16.png",
+        "32": "/images/cloud-storage-32x32.png",
+        "48": "/images/cloud-storage-48x48.png",
+        "128": "/images/cloud-storage-128x128.png"
+    },
+    "options_page": "options.html"
+}

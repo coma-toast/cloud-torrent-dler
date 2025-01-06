@@ -2,7 +2,7 @@ package jsonio
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 )
 
 // WriteFile writes the cache file to disk
@@ -12,7 +12,7 @@ func WriteFile(path string, payload interface{}) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(path, data, 0644)
+	err = os.WriteFile(path, data, 0644)
 	if err != nil {
 		return err
 	}

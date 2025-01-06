@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/kennygrant/sanitize"
@@ -33,7 +34,11 @@ func SanitizePath(input string) string {
 }
 
 func replaceText(input string) string {
-	output := strings.ReplaceAll(input, "-", " ")
+	re := regexp.MustCompile(`\[[^\]]*\]`)
+	output := re.ReplaceAllStringFunc(input, func(s string) string {
+		return ""
+	})
+	output = strings.ReplaceAll(output, "-", " ")
 	output = strings.ReplaceAll(output, "_", " ")
 	output = strings.ReplaceAll(output, ".", " ")
 	// For some reason, a lot of file names don't quite match the magnet name - WEBRip in the magnet name is changed to webdl in the file name. Why?

@@ -1,5 +1,5 @@
 PROJECT_NAME := "cloud-torrent-dler"
-PKG := "gitlab.jasondale.me/jdale/$(PROJECT_NAME)"
+PKG := "github.com/coma-toast/$(PROJECT_NAME)"
 PKG_LIST := $(shell go list ${PKG}/... | grep -v /vendor/)
 GO_FILES := $(shell find . -name '*.go' | grep -v /vendor/ | grep -v _test.go)
 SERVER := $(shell cat config.yaml | grep -m1 TargetServer | awk '{ print $$2 }')

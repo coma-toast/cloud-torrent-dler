@@ -1,11 +1,13 @@
 package main
 
+import "github.com/coma-toast/cloud-torrent-dler/pkg/seedr"
+
 type mockSeedrInstance struct {
 }
 
 // Add is test
-func (m mockSeedrInstance) Add(magnet string) error {
-	return nil
+func (m mockSeedrInstance) Add(magnet string) (seedr.Result, error) {
+	return seedr.Result{}, nil
 
 }
 

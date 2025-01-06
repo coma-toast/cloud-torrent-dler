@@ -7,3 +7,5 @@ var/
 cache.json
 log/
 chrome-extension/node_modules
+cloud-torrent-dler.exe
+cloud-torrent-downloader

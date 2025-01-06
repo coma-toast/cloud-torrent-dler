@@ -12,17 +12,20 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/coma-toast/cloud-torrent-dler/pkg/cache"
+	"github.com/coma-toast/cloud-torrent-dler/pkg/helper"
+	"github.com/coma-toast/cloud-torrent-dler/pkg/pidcheck"
+	"github.com/coma-toast/cloud-torrent-dler/pkg/seedr"
+	"github.com/coma-toast/cloud-torrent-dler/pkg/showrss"
+	"github.com/coma-toast/cloud-torrent-dler/pkg/yts"
 	"github.com/gorilla/mux"
-	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/helper"
-	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/pidcheck"
-	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/seedr"
-	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/showrss"
-	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/yts"
 )
 
 // SeedrInstance is the instance
@@ -39,32 +42,36 @@ type SeedrInstance interface {
 
 // Magnet is for magnet links and their ID
 type Magnet struct {
-	ID         int
-	link       string
-	name       string
-	tVShowName string
+	ID           int
+	link         string
+	name         string
+	tVShowName   string
+	autoDownload AutoDownload
+	torrentHash  string
 }
 
 // ApiMagnet is the struct for data for working with Magnets via api
 type ApiMagnet struct {
-	Link string `json:"link"`
+	Link         string       `json:"link"`
+	AutoDownload AutoDownload `json:"auto_download"`
 }
 
-// DownloadItem is the information needed for the download queue
-type DownloadItem struct {
-	EpisodeID     int
-	FolderPath    string
-	IsDir         bool
-	Name          string
-	TVShowName    string
-	ParentSeedrID int
-	SeedrID       int
-	ShowID        int
+type AutoDownload string
+
+const (
+	Movie AutoDownload = "movie"
+	Show  AutoDownload = "show"
+	None  AutoDownload = ""
+)
+
+func (a AutoDownload) String() string {
+	return string(a)
 }
 
 // One cache to rule them all
 var cache = &Cache{}
 var dryRun = false
+var videoFileRegex = regexp.MustCompile("(.*?).(mkv|mp4|avi|m4v)$")
 
 func main() {
 	configPath := flag.String("conf", ".", "config path")
@@ -77,11 +84,11 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 	date := time.Now().Format("01-02-2006")
-	err := os.MkdirAll(conf.CachePath+"/log", 0777)
+	err := os.MkdirAll(filepath.Join(conf.CachePath, "log"), 0777)
 	if err != nil {
 		log.WithField("error", err).Warn("Unable to create log directory")
 	}
-	fileLocation := fmt.Sprintf("%s/log/ctd-%s.log", conf.CachePath, date)
+	fileLocation := filepath.Join(conf.CachePath, "log", fmt.Sprintf("ctd-%s.log", date))
 	file, err := os.OpenFile(fileLocation, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
 	if err == nil {
 		log.SetOutput(io.MultiWriter(file, os.Stdout))
@@ -99,7 +106,7 @@ func main() {
 
 	selectedSeedr := conf.GetSeedrInstance()
 
-	pidPath := fmt.Sprintf("%s/cloud-torrent-downloader", conf.PidFilePath)
+	pidPath := filepath.Join(conf.PidFilePath, "cloud-torrent-downloader")
 	pid := pidcheck.AlreadyRunning(pidPath)
 	if pid {
 		log.Fatal("App already running. Exiting.")
@@ -130,10 +137,13 @@ func main() {
 	var downloadLoopTime = time.Second * time.Duration(conf.CheckFilesToDownloadTimer)
 	if conf.DevMode {
 		downloadLoopTime = time.Second * 10
+		// cache.Clear()
 	}
 	// downloadWorker()
 	// Channel so we can continuously monitor new episodes being added to showrss
 
+	// * HERE - added magnetlink package so i can get more data from the magnets
+	// * so i can better create folders and match and stuff. go-torrent might be good too
 	go func() {
 		for range time.NewTicker(downloadLoopTime).C {
 			deleteQueue := make(map[string]int)
@@ -143,18 +153,22 @@ func main() {
 			}
 		unsortedLoop:
 			for _, unsortedItem := range unsortedItems {
-				dataLog(unsortedItem, "Unsorted loop")
+				log.WithFields(log.Fields{
+					"show": unsortedItem.TVShowName,
+					"name": unsortedItem.Name,
+				}).Info("processsing unsorted item")
 				okToDeleteFolder := false
-				isAVideo, _ := regexp.MatchString("(.*?).(mkv|mp4|avi|m4v)$", unsortedItem.Name)
+				isAVideo := videoFileRegex.MatchString(unsortedItem.Name)
+
 				if isAVideo {
 					// name := helper.SanitizeText(string(unsortedItem.Name[0 : len(unsortedItem.Name)-4]))
 					// itemCacheData := cache.Get(name)
 					// _ = itemCacheData
 					setCacheSeedrInfo(selectedSeedr, "", &unsortedItem)
 					if unsortedItem.ShowID != 0 {
-						path := fmt.Sprintf("%s/%s", conf.DlRoot, conf.CompletedFolders[0])
+						path := filepath.Join(conf.DlRoot, conf.CompletedFolders[0])
 						if unsortedItem.TVShowName != "" {
-							path = fmt.Sprintf("%s/%s", path, unsortedItem.TVShowName)
+							path = filepath.Join(path, unsortedItem.TVShowName)
 						}
 						log.WithFields(log.Fields{
 							"show":        unsortedItem.TVShowName,
@@ -178,10 +192,47 @@ func main() {
 							err = selectedSeedr.DeleteFile(unsortedItem.SeedrID)
 							if err != nil {
 								log.WithField("error", err).Warn("Error deleting file ", unsortedItem.Name)
-
 							}
+							cache.RemoveAutoDownload(unsortedItem.TorrentHash)
 						}
 					}
+
+					var path string
+					autodownload := cache.GetAutoDownload(unsortedItem.TorrentHash)
+
+					if autodownload == Movie {
+						path = filepath.Join(conf.DlRoot, conf.CompletedFolders[1])
+					} else if autodownload == Show {
+						path = filepath.Join(conf.DlRoot, conf.CompletedFolders[0])
+					}
+					log.WithFields(log.Fields{
+						"name":        unsortedItem.Name,
+						"destination": path,
+					}).Info("autodownload item found, downloading")
+
+					_, err = os.Stat(path + unsortedItem.Name)
+					if err != nil {
+						if os.IsNotExist(err) {
+							err = selectedSeedr.Get(unsortedItem, path)
+							if err != nil {
+								log.WithField("error", err).Warn("Error getting the file ", unsortedItem.Name)
+								okToDeleteFolder = false
+								delete(deleteQueue, unsortedItem.FolderPath)
+								break unsortedLoop
+							}
+							okToDeleteFolder = true
+						}
+					}
+
+					if conf.DeleteAfterDownload {
+						infoLog(unsortedItem, "Deleting item")
+						err = selectedSeedr.DeleteFile(unsortedItem.SeedrID)
+						if err != nil {
+							log.WithField("error", err).Warn("Error deleting file ", unsortedItem.Name)
+
+						}
+					}
+
 				}
 				if okToDeleteFolder {
 					deleteQueue[unsortedItem.FolderPath] = unsortedItem.ParentSeedrID
@@ -205,7 +256,7 @@ func main() {
 					if isAVideo {
 						dataLog(item, "Setting cache for item")
 						setCacheSeedrInfo(selectedSeedr, downloadFolder, &item)
-						localPath := fmt.Sprintf("%s/%s", conf.DlRoot, item.FolderPath)
+						localPath := filepath.Join(conf.DlRoot, item.FolderPath)
 						thisShouldBeDownloaded := shouldThisBeDownloaded(localPath + item.Name)
 						if thisShouldBeDownloaded {
 							dataLog(item, "Item will be downloaded")
@@ -299,6 +350,7 @@ func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item 
 	item.EpisodeID = cacheItem.EpisodeID
 	// item.FolderPath = helper.SanitizePath(folderPath)
 	item.FolderPath = downloadFolder
+	item.TorrentHash = cacheItem.TorrentHash
 	item.SeedrID, err = selectedSeedr.FindID(filename)
 	if err != nil {
 		return err
@@ -380,17 +432,19 @@ func AddMagnet(instance SeedrInstance, data Magnet, showID int) error {
 		fmt.Printf("Adding magnet for episode: %s\n", data.name)
 		_, err := instance.Add(data.link)
 		if err != nil {
+			log.WithField("error", err).Warn("Error adding magnet")
 			return err
 		}
 	}
 
 	itemData := DownloadItem{
-		EpisodeID:  data.ID,
-		ShowID:     showID,
-		SeedrID:    0,
-		Name:       data.name,
-		FolderPath: "",
-		TVShowName: data.tVShowName,
+		EpisodeID:   data.ID,
+		ShowID:      showID,
+		SeedrID:     0,
+		Name:        data.name,
+		FolderPath:  "",
+		TVShowName:  data.tVShowName,
+		TorrentHash: data.torrentHash,
 	}
 
 	magnetParts := strings.Split(data.link, "&")
@@ -404,6 +458,13 @@ func AddMagnet(instance SeedrInstance, data Magnet, showID int) error {
 
 	err := cache.Set(data.name, itemData)
 	if err != nil {
+		log.WithField("error", err).Warn("Error setting cache")
+		return err
+	}
+
+	err = cache.SetAutoDownload(data.torrentHash, data.autoDownload)
+	if err != nil {
+		log.WithField("error", err).Warn("Error setting autodownload")
 		return err
 	}
 
@@ -460,6 +521,7 @@ func getNewEpisodes(url string) ([]Magnet, error) {
 
 type MagnetApi struct {
 	selectedSeedr SeedrInstance
+	mutex         sync.RWMutex
 }
 
 type MainPageData struct {
@@ -478,9 +540,13 @@ func (magnetApi *MagnetApi) RunMagnetApi() {
 	r := mux.NewRouter()
 	r.HandleFunc("/gui", magnetApi.GuiHandler)
 	r.HandleFunc("/api/ping", magnetApi.PingHandler)
-	r.HandleFunc("/api/magnet", magnetApi.AddMagnetHandler).Methods("POST")
-	r.HandleFunc("/api/torrent", magnetApi.AddTorrentHandler).Methods("POST")
-	r.HandleFunc("/api/show/{showID}", magnetApi.ShowHandler).Methods("GET")
+	r.HandleFunc("/api/magnet", magnetApi.AddMagnetHandler).Methods(http.MethodPost)
+	r.HandleFunc("/api/torrent", magnetApi.AddTorrentHandler).Methods(http.MethodPost)
+	r.HandleFunc("/api/show/{showID}", magnetApi.ShowHandler).Methods(http.MethodGet)
+	r.HandleFunc("/api/data/show", magnetApi.DataShowHandler).Methods(http.MethodGet)
+	r.HandleFunc("/api/search", magnetApi.SearchHandler).Methods(http.MethodGet)
+	// r.HandleFunc("/api/data/show/{showID}", magnetApi.DataShowByIDHandler).Methods("GET")
+	// r.HandleFunc("/api/data/show/{showID}", magnetApi.DataShowByIDHandler).Methods("POST")
 	log.Info(fmt.Sprintf("Magnet API running. Send JSON {link: url} as a POST request to x.x.x.x:%s/api/magnet to add directly to Seedr!", conf.Port))
 
 	cwd, err := filepath.Abs(filepath.Dir(os.Args[0]))
@@ -489,10 +555,34 @@ func (magnetApi *MagnetApi) RunMagnetApi() {
 	}
 
 	// Serve static files
-	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(cwd+"/static/"))))
+	r.PathPrefix("/dist/").Handler(http.StripPrefix("/dist/", http.FileServer(http.Dir(cwd+"/dist/"))))
 
 	// r.Use(APILoggingMiddleware)
 	log.Error(http.ListenAndServe(fmt.Sprintf(":%s", conf.Port), r))
+}
+
+func (magnetApi *MagnetApi) SearchHandler(w http.ResponseWriter, r *http.Request) {
+	page := 1
+	params := r.URL.Query()
+	search := params.Get("search")
+	page, err := strconv.Atoi(params.Get("page"))
+	if err != nil {
+		log.Error(err)
+	}
+
+	result, err := yts.SearchMovies(search, page)
+	if err != nil {
+		log.Error(err)
+	}
+
+	data, err := json.Marshal(result)
+	if err != nil {
+		log.Error(err)
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
+
 }
 
 // AddMagnetHandler handles api calls adding magnets
@@ -511,6 +601,11 @@ func (magnetApi *MagnetApi) AddMagnetHandler(w http.ResponseWriter, r *http.Requ
 		if err != nil {
 			log.WithError(err)
 		}
+		err = cache.SetAutoDownload(result.Torrent_hash, data.AutoDownload)
+		if err != nil {
+			log.WithError(err)
+		}
+
 	}
 	resultData, err := json.Marshal(result)
 	if err != nil {
@@ -538,6 +633,8 @@ func (magnetApi *MagnetApi) AddTorrentHandler(w http.ResponseWriter, r *http.Req
 		if err != nil {
 			log.WithError(err)
 		}
+		cache.SetAutoDownload(result.Torrent_hash, data.AutoDownload)
+
 	}
 	resultData, err := json.Marshal(result)
 	if err != nil {
@@ -574,6 +671,22 @@ func (magnetApi *MagnetApi) ShowHandler(w http.ResponseWriter, r *http.Request) 
 	// w.WriteHeader(http.StatusOK)
 	// w.Header().Set("Content-Type", "application/json")
 	// w.Write(resultData)
+}
+
+func (magnetApi *MagnetApi) DataShowHandler(w http.ResponseWriter, r *http.Request) {
+	var result map[string]DownloadItem
+	var err error
+
+	result = cache.GetAll()
+
+	resultData, err := json.Marshal(result)
+	if err != nil {
+		log.WithError(err)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(resultData)
 }
 
 // Load the web front end
@@ -660,6 +773,8 @@ func (magnetApi *MagnetApi) PingHandler(w http.ResponseWriter, r *http.Request) 
 
 // AddRawMagnet adds a magnet link to Seedr for downloading
 func (magnetApi *MagnetApi) AddRawMagnet(magnetLink string) (seedr.Result, error) {
+	magnetApi.mutex.Lock()
+	defer magnetApi.mutex.Unlock()
 	var result seedr.Result
 	var err error
 	if !dryRun {
@@ -675,6 +790,8 @@ func (magnetApi *MagnetApi) AddRawMagnet(magnetLink string) (seedr.Result, error
 
 // AddRawTorrent adds a torrent link to Seedr for downloading
 func (magnetApi *MagnetApi) AddRawTorrent(torrentUrl string) (seedr.Result, error) {
+	magnetApi.mutex.Lock()
+	defer magnetApi.mutex.Unlock()
 	var result seedr.Result
 	var err error
 	if !dryRun {

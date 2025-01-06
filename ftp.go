@@ -9,8 +9,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/coma-toast/cloud-torrent-dler/pkg/helper"
 	"github.com/secsy/goftp"
-	"gitlab.jasondale.me/jdale/cloud-torrent-dler/pkg/helper"
 )
 
 // SeedrFTP is the struct for FTP
