@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -17,7 +16,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/db"
+	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/helper"
 	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/pidcheck"
+	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/seedr"
 	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/showrss"
 	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/yts"
 	log "github.com/sirupsen/logrus"
@@ -32,9 +34,9 @@ type SeedrInstance interface {
 	DeleteFile(id int) error
 	DeleteFolder(id int) error
 	FindID(filename string) (int, error)
-	Get(item DownloadItem, destination string) error
+	Get(item db.DownloadItem, destination string) error
 	GetPath(ID int) (string, error)
-	List(path string) ([]DownloadItem, error)
+	List(path string) ([]db.DownloadItem, error)
 }
 
 // Magnet is for magnet links and their ID
@@ -72,6 +74,7 @@ var videoFileRegex = regexp.MustCompile("(.*?).(mkv|mp4|avi|m4v)$")
 
 func main() {
 	configPath := flag.String("conf", ".", "config path")
+	migrate := flag.Bool("migrate", false, "migrate the database")
 	flag.Parse()
 	conf = getConf(*configPath)
 
@@ -93,6 +96,20 @@ func main() {
 		log.WithField("error", err).Warn("Failed to log to file, using default stderr")
 	}
 	log.Info("Starting up...")
+
+	if *migrate {
+		log.Info("Migrating database...")
+		database, err := db.Connect(conf.DBHost, conf.DBDatabase, conf.DBUser, conf.DBPassword)
+		if err != nil {
+			log.WithField("error", err).Warn("Error connecting to database")
+		}
+		// err = db.DeleteDatabase(database)
+		err = db.Migrate(database)
+		if err != nil {
+			log.WithField("error", err).Warn("Error migrating database")
+		}
+		os.Exit(0)
+	}
 
 	// Cache setup
 	err = cache.Initialize(conf.CachePath)
@@ -292,7 +309,7 @@ func main() {
 }
 
 // * Logging functions
-func dataLog(item DownloadItem, message string) {
+func dataLog(item db.DownloadItem, message string) {
 	contextLogger := log.WithFields(log.Fields{
 		"episodeID":     item.EpisodeID,
 		"folderPath":    item.FolderPath,
@@ -307,7 +324,7 @@ func dataLog(item DownloadItem, message string) {
 	contextLogger.Debug(message)
 }
 
-func infoLog(item DownloadItem, message string) {
+func infoLog(item db.DownloadItem, message string) {
 	contextLogger := log.WithFields(log.Fields{
 		"folderPath": item.FolderPath,
 		"name":       item.Name,
@@ -328,7 +345,7 @@ func deleteTheQueue(selectedSeedr SeedrInstance, deleteQueue map[string]int) {
 	}
 }
 
-// func validateCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item *DownloadItem) error {
+// func validateCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item *db.DownloadItem) error {
 // 	var err error
 // 	filename := item.Name
 // 	folderName := string(filename[0 : len(filename)-4])
@@ -336,7 +353,7 @@ func deleteTheQueue(selectedSeedr SeedrInstance, deleteQueue map[string]int) {
 
 // }
 
-func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item *DownloadItem) error {
+func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item *db.DownloadItem) error {
 	var err error
 	filename := item.Name
 	folderName := helper.SanitizeText(string(filename[0 : len(filename)-4]))
@@ -361,6 +378,26 @@ func setCacheSeedrInfo(selectedSeedr SeedrInstance, downloadFolder string, item 
 	}
 
 	return nil
+}
+
+func populateDatabaseTVShows() {
+	allShows, err := showrss.GetAllEpisodeItems(conf.ShowRSS)
+	if err != nil {
+		log.WithField("error", err).Warn("Error getting shows")
+		return
+	}
+	for i := 0; i < len(allShows); i++ {
+		item := allShows[i]
+		db.GetDownloadItem()
+		cache.Set(item.ItemTitle(), db.DownloadItem{
+			EpisodeID:   item.ItemTVEpisodeID(),
+			ShowID:      item.ItemTVShowID(),
+			SeedrID:     0,
+			Name:        item.ItemTitle(),
+			TVShowName:  item.ItemTVShowName(),
+			TorrentHash: item.ItemTorrentHash(),
+		})
+	}
 }
 
 func checkNewEpisodes(selectedSeedr SeedrInstance) {
@@ -434,7 +471,7 @@ func AddMagnet(instance SeedrInstance, data Magnet, showID int) error {
 		}
 	}
 
-	itemData := DownloadItem{
+	itemData := db.DownloadItem{
 		EpisodeID:   data.ID,
 		ShowID:      showID,
 		SeedrID:     0,
@@ -468,15 +505,15 @@ func AddMagnet(instance SeedrInstance, data Magnet, showID int) error {
 	return nil
 }
 
-func findAllToDownload(instance SeedrInstance, path string, ftp bool) ([]DownloadItem, error) {
+func findAllToDownload(instance SeedrInstance, path string, ftp bool) ([]db.DownloadItem, error) {
 	// TODO: the 2 api calls need test cases, test the structs
 	files, err := instance.List(path)
 
 	if err != nil {
 		// instance.List("")
-		return []DownloadItem{}, err
+		return []db.DownloadItem{}, err
 	}
-	downloads := []DownloadItem{}
+	downloads := []db.DownloadItem{}
 
 	for _, file := range files {
 		nextPath := file.FolderPath
@@ -488,7 +525,7 @@ func findAllToDownload(instance SeedrInstance, path string, ftp bool) ([]Downloa
 			newDownloads, err := findAllToDownload(instance, nextPath, ftp)
 
 			if err != nil {
-				return []DownloadItem{}, err
+				return []db.DownloadItem{}, err
 			}
 			downloads = append(downloads, newDownloads...)
 		}
@@ -671,7 +708,7 @@ func (magnetApi *MagnetApi) ShowHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (magnetApi *MagnetApi) DataShowHandler(w http.ResponseWriter, r *http.Request) {
-	var result map[string]DownloadItem
+	var result map[string]db.DownloadItem
 	var err error
 
 	result = cache.GetAll()
@@ -689,7 +726,7 @@ func (magnetApi *MagnetApi) DataShowHandler(w http.ResponseWriter, r *http.Reque
 // Load the web front end
 func (magnetApi *MagnetApi) GuiHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	bytes, err := ioutil.ReadAll(r.Body)
+	bytes, err := io.ReadAll(r.Body)
 	// * dev code
 	_ = bytes
 	if err != nil {

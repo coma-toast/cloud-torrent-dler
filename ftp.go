@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/db"
+	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/helper"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/secsy/goftp"
@@ -21,7 +23,7 @@ type SeedrFTP struct {
 }
 
 // List gets a list of files or folders in a given path
-func (s *SeedrFTP) List(path string) ([]DownloadItem, error) {
+func (s *SeedrFTP) List(path string) ([]db.DownloadItem, error) {
 	if s.client == nil {
 		ftpConfig := goftp.Config{
 			User:               s.Username,
@@ -33,25 +35,25 @@ func (s *SeedrFTP) List(path string) ([]DownloadItem, error) {
 		var err error
 		s.client, err = goftp.DialConfig(ftpConfig, "ftp.seedr.cc")
 		if err != nil {
-			return []DownloadItem{}, err
+			return []db.DownloadItem{}, err
 		}
 
 	}
 
 	folderList, err := s.client.ReadDir(path)
 	if err != nil {
-		return []DownloadItem{}, err
+		return []db.DownloadItem{}, err
 	}
 
-	returnData := []DownloadItem{}
+	returnData := []db.DownloadItem{}
 
 	for _, file := range folderList {
 		name := helper.SanitizeText(file.Name())
-		var cacheData DownloadItem
+		var cacheData db.DownloadItem
 		if cache.IsSet(name) {
 			cacheData = cache.Get(name)
 		}
-		appendData := DownloadItem{
+		appendData := db.DownloadItem{
 			EpisodeID:  cacheData.EpisodeID,
 			ShowID:     cacheData.ShowID,
 			SeedrID:    cacheData.SeedrID,
@@ -65,7 +67,7 @@ func (s *SeedrFTP) List(path string) ([]DownloadItem, error) {
 }
 
 // Get downloads the files in the provided array of files
-func (s *SeedrFTP) Get(file DownloadItem, destination string) error {
+func (s *SeedrFTP) Get(file db.DownloadItem, destination string) error {
 	var err error
 	if s.client == nil {
 		ftpConfig := goftp.Config{

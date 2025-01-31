@@ -166,7 +166,7 @@ func TestParseResult(t *testing.T) {
 	}{
 		{
 			name: "short add",
-			args: args{input: []byte([123 34 114 101 115 117 108 116 34 58 116 114 117 101 125])},
+			args: args{input: []byte{123, 34, 114, 101, 115, 117, 108, 116, 34, 58, 116, 114, 117, 101, 125}},
 			want: "{\"result\": true}",
 		},
 	}

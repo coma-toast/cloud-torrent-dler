@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/db"
+	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/seedr"
 )
 
 // SeedrAPI is the struct for API
@@ -15,8 +18,8 @@ type SeedrAPI struct {
 }
 
 // List gets a list of files or folders
-func (s *SeedrAPI) List(path string) ([]DownloadItem, error) {
-	folderList := []DownloadItem{}
+func (s *SeedrAPI) List(path string) ([]db.DownloadItem, error) {
+	folderList := []db.DownloadItem{}
 	if s.client == nil {
 		s.client = &seedr.Client{
 			Username: s.Username,
@@ -28,7 +31,7 @@ func (s *SeedrAPI) List(path string) ([]DownloadItem, error) {
 		s.folderMapping = make(map[int]string)
 		err := s.populateFolderMapping(0, "")
 		if err != nil {
-			return []DownloadItem{}, err
+			return []db.DownloadItem{}, err
 		}
 	}
 
@@ -36,26 +39,26 @@ func (s *SeedrAPI) List(path string) ([]DownloadItem, error) {
 	if err != nil {
 		err = s.populateFolderMapping(0, "")
 		if err != nil {
-			return []DownloadItem{}, err
+			return []db.DownloadItem{}, err
 		}
 		folderID, err = s.getFolderIDFromPath(path)
 		if err != nil {
-			return []DownloadItem{}, err
+			return []db.DownloadItem{}, err
 		}
 	}
 
 	files, err := s.client.GetFolder(folderID)
 	if err != nil {
-		return []DownloadItem{}, err
+		return []db.DownloadItem{}, err
 	}
 
 	for _, folder := range files.Folders {
 		name := folder.Name()
-		var cacheData DownloadItem
+		var cacheData db.DownloadItem
 		if cache.IsSet(name) {
 			cacheData = cache.Get(name)
 		}
-		appendData := DownloadItem{
+		appendData := db.DownloadItem{
 			EpisodeID:     cacheData.EpisodeID,
 			FolderPath:    folder.SubFolderName,
 			IsDir:         folder.IsDir(),
@@ -74,12 +77,12 @@ func (s *SeedrAPI) List(path string) ([]DownloadItem, error) {
 		if err != nil {
 			fmt.Println(err)
 		}
-		var cacheData DownloadItem
+		var cacheData db.DownloadItem
 		if cache.IsSet(name) {
 			cacheData = cache.Get(name)
 		}
 
-		appendData := DownloadItem{
+		appendData := db.DownloadItem{
 			EpisodeID:     cacheData.EpisodeID,
 			FolderPath:    file.FileName,
 			IsDir:         file.IsDir(),
@@ -97,7 +100,7 @@ func (s *SeedrAPI) List(path string) ([]DownloadItem, error) {
 }
 
 // Get downloads the file name
-func (s *SeedrAPI) Get(item DownloadItem, destination string) error {
+func (s *SeedrAPI) Get(item db.DownloadItem, destination string) error {
 	var err error
 	// destination = helper.SanitizePath(destination)
 	fmt.Printf("Downloading item: %s to %s\n", item.Name, destination)

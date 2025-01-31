@@ -3,20 +3,24 @@ package main
 import (
 	"path/filepath"
 	"sync"
+
+	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/db"
+	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/helper"
+	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/jsonio"
 )
 
 // Cache is the cache for storing episode lists
 type Cache struct {
 	Name              string
 	path              string
-	state             map[string]DownloadItem
+	state             map[string]db.DownloadItem
 	autodownloadItems map[string]AutoDownload
 	mutex             *sync.RWMutex
 }
 
 type Data struct {
-	State             map[string]DownloadItem `json:"state"`
-	AutodownloadItems map[string]AutoDownload `json:"auto_download"`
+	State             map[string]db.DownloadItem `json:"state"`
+	AutodownloadItems map[string]AutoDownload    `json:"auto_download"`
 }
 
 // Initialize the cache so it doesn't panic when trying to assign to the map when the map is nil
@@ -24,7 +28,7 @@ func (c *Cache) Initialize(path string) error {
 	filePath := filepath.Join(path, "cache.json")
 	c.mutex = &sync.RWMutex{}
 	c.path = filePath
-	cache.state = make(map[string]DownloadItem)
+	cache.state = make(map[string]db.DownloadItem)
 	cache.autodownloadItems = make(map[string]AutoDownload)
 	data := Data{}
 	err := jsonio.ReadFile(filePath, &data)
@@ -40,7 +44,7 @@ func (c *Cache) Initialize(path string) error {
 }
 
 // Set sets the cache
-func (c *Cache) Set(key string, value DownloadItem) error {
+func (c *Cache) Set(key string, value db.DownloadItem) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	key = helper.SanitizeText(key)
@@ -70,7 +74,7 @@ func (c *Cache) Delete(key string) error {
 func (c *Cache) Clear() error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	c.state = make(map[string]DownloadItem)
+	c.state = make(map[string]db.DownloadItem)
 	c.autodownloadItems = make(map[string]AutoDownload)
 	err := c.write()
 	if err != nil {
@@ -118,7 +122,7 @@ func (c *Cache) RemoveAutoDownload(torrentHash string) error {
 }
 
 // Get retrieves data from the cache
-func (c *Cache) Get(key string) DownloadItem {
+func (c *Cache) Get(key string) db.DownloadItem {
 	key = helper.SanitizeText(key)
 	// fmt.Printf("Getting cache: %s\n", key)
 	c.mutex.RLock()
@@ -127,7 +131,7 @@ func (c *Cache) Get(key string) DownloadItem {
 }
 
 // GetAll retrieves all data from the cache
-func (c *Cache) GetAll() map[string]DownloadItem {
+func (c *Cache) GetAll() map[string]db.DownloadItem {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 	return c.state

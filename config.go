@@ -24,6 +24,10 @@ type config struct {
 	CheckFilesToDownloadTimer int
 	Port                      string
 	DevMode                   bool
+	DBHost                    string
+	DBDatabase                string
+	DBUser                    string
+	DBPassword                string
 }
 
 func (c config) GetSeedrInstance() SeedrInstance {

@@ -1,5 +1,10 @@
 package main
 
+import (
+	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/db"
+	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/seedr"
+)
+
 type mockSeedrInstance struct {
 }
 
@@ -28,7 +33,7 @@ func (m mockSeedrInstance) FindID(filename string) (int, error) {
 }
 
 // Get is test
-func (m mockSeedrInstance) Get(item DownloadItem, destination string) error {
+func (m mockSeedrInstance) Get(item db.DownloadItem, destination string) error {
 	return nil
 }
 
@@ -38,6 +43,6 @@ func (m mockSeedrInstance) GetPath(ID int) (string, error) {
 }
 
 // List is test
-func (m mockSeedrInstance) List(path string) ([]DownloadItem, error) {
-	return []DownloadItem{}, nil
+func (m mockSeedrInstance) List(path string) ([]db.DownloadItem, error) {
+	return []db.DownloadItem{}, nil
 }

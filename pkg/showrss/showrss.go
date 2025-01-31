@@ -3,7 +3,7 @@ package showrss
 import (
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -87,7 +87,7 @@ func getXML(url string) ([]byte, error) {
 		return []byte{}, fmt.Errorf("Status error: %v", resp.StatusCode)
 	}
 
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return []byte{}, fmt.Errorf("Read body: %v", err)
 	}
