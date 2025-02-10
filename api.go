@@ -55,8 +55,13 @@ func (s *SeedrAPI) List(path string) ([]db.DownloadItem, error) {
 	for _, folder := range files.Folders {
 		name := folder.Name()
 		var cacheData db.DownloadItem
-		if cache.IsSet(name) {
-			cacheData = cache.Get(name)
+		cacheDataPtr, err := db.Database.GetDownloadItemByName(name)
+		if err != nil {
+			return nil, err
+		}
+		cacheData = *cacheDataPtr
+		if err != nil {
+			return nil, err
 		}
 		appendData := db.DownloadItem{
 			EpisodeID:     cacheData.EpisodeID,
@@ -65,7 +70,7 @@ func (s *SeedrAPI) List(path string) ([]db.DownloadItem, error) {
 			Name:          folder.Name(),
 			ParentSeedrID: folderID,
 			SeedrID:       cacheData.SeedrID,
-			ShowID:        cacheData.ShowID,
+			ShowGUID:      cacheData.ShowGUID,
 			TVShowName:    cacheData.TVShowName,
 		}
 		folderList = append(folderList, appendData)
@@ -78,8 +83,13 @@ func (s *SeedrAPI) List(path string) ([]db.DownloadItem, error) {
 			fmt.Println(err)
 		}
 		var cacheData db.DownloadItem
-		if cache.IsSet(name) {
-			cacheData = cache.Get(name)
+		cacheDataPtr, err := db.Database.GetDownloadItemByName(name)
+		if err != nil {
+			return nil, err
+		}
+		cacheData = *cacheDataPtr
+		if err != nil {
+			return nil, err
 		}
 
 		appendData := db.DownloadItem{
@@ -88,8 +98,8 @@ func (s *SeedrAPI) List(path string) ([]db.DownloadItem, error) {
 			IsDir:         file.IsDir(),
 			Name:          file.Name(),
 			ParentSeedrID: folderID,
-			SeedrID:       id,
-			ShowID:        cacheData.ShowID,
+			SeedrID:       cacheData.SeedrID,
+			ShowGUID:      cacheData.ShowGUID,
 			TVShowName:    cacheData.TVShowName,
 		}
 		folderList = append(folderList, appendData)
@@ -110,7 +120,7 @@ func (s *SeedrAPI) Get(item db.DownloadItem, destination string) error {
 	os.MkdirAll(destination, 0777)
 	// Full local path
 	path := fmt.Sprintf("%s/%s", destination, item.Name)
-	err = s.client.DownloadFileByID(item.SeedrID, path)
+	err = s.client.DownloadFileByID(item.SeedrID.ID, path)
 	if err != nil {
 		return err
 	}

@@ -9,3 +9,4 @@ log/
 chrome-extension/node_modules
 cloud-torrent-dler.exe
 cloud-torrent-downloader
+http-client.private.env.json

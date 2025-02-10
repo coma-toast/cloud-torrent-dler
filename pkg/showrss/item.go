@@ -2,6 +2,8 @@ package showrss
 
 // Item is each individual item - each episode
 type Item struct {
+	ID           int    `gorm:"primaryKey"`
+	GUID         string `xml:"guid"`
 	Title        string `xml:"title"`
 	Link         string `xml:"link"`
 	PubDate      string `xml:"pubDate"`

@@ -1,0 +1,32 @@
+/*
+# Seedr
+*/
+/*
+## User
+*/
+GET /user
+/*
+## Folder
+*/
+###
+GET /folder/0
+
+HTTP/1.1 200  - OK
+server: nginx
+date: Sun, 02 Feb 2025 02:52:11 GMT
+content-type: text/html; charset=UTF-8
+transfer-encoding: chunked
+connection: close
+vary: Accept-Encoding
+x-powered-by: PHP/8.1.31
+expires: Thu, 19 Nov 1981 08:52:00 GMT
+cache-control: no-store, no-cache, must-revalidate
+pragma: no-cache
+access-control-allow-origin: 
+access-control-allow-credentials: true
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+alt-svc: h3=":443"; ma=86400
+strict-transport-security: max-age=31536000; includeSubdomains; preload
+content-encoding: br

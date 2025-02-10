@@ -3,10 +3,14 @@ package seedr
 import (
 	"os"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // File is the file data object. Use the ID to get the file itself
 type File struct {
+	gorm.Model
+	_id            uint   `gorm:"primaryKey"`
 	ID             int    `json:"id"`
 	FileName       string `json:"name"`
 	FileSize       int64  `json:"size"`
