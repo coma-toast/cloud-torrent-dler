@@ -1,29 +1,20 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"html/template"
 	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
-	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/db"
 	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/pidcheck"
 	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/seedr"
 	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/showrss"
-	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/yts"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/gorilla/mux"
 )
 
 // SeedrInstance is the instance
@@ -56,7 +47,8 @@ type ApiMagnet struct {
 // var cache = &Cache{}
 var dryRun = false
 var videoFileRegex = regexp.MustCompile("(.*?).(mkv|mp4|avi|m4v)$")
-var database = db.DbClient{}
+var database = &db.DbClient{}
+var showRSSClient = showrss.ShowRSSClient{}
 
 func main() {
 	configPath := flag.String("conf", ".", "config path")
@@ -108,6 +100,8 @@ func main() {
 		os.Exit(0)
 	}
 
+	showRSSClient.Init(conf.ShowRSS)
+
 	selectedSeedr := conf.GetSeedrInstance()
 
 	pidPath := filepath.Join(conf.PidFilePath, "cloud-torrent-downloader")
@@ -145,117 +139,118 @@ func main() {
 
 	go func() {
 		for range time.NewTicker(downloadLoopTime).C {
-			// deleteQueue := make(map[string]int)
-			// unsortedItems, err := findAllToDownload(selectedSeedr, "", conf.UseFTP)
-			// if err != nil {
-			// 	log.WithField("error", err).Warn("Error finding all downloads")
-			// }
-			database.GetSeedrUpload()
 		unsortedLoop:
 			// * commenting this all out.
 			// * first, check the queue for items to add to seedr.
 			// * second, check the database for any items that are not downloaded
-			itemsToUpload, err := database.GetSeedrUpload()
+			itemToUpload, err := database.GetSeedrUpload()
 			if err != nil {
 				log.WithField("error", err).Warn("Error getting items to upload")
 			}
-			for _, item := range itemsToUpload {
 				log.WithFields(log.Fields{
 					"show": item.TVShowName,
 				}).Info("Uploading item to seedr")
-				err = selectedSeedr.AddTorrent(item.TorrentHash)
-			// for _, unsortedItem := range unsortedItems {
-			// 	log.WithFields(log.Fields{
-			// 		"show": unsortedItem.TVShowName,
-			// 		"name": unsortedItem.Name,
-			// 	}).Info("processsing unsorted item")
-			// 	okToDeleteFolder := false
-			// 	isAVideo := videoFileRegex.MatchString(unsortedItem.Name)
+			result, err := selectedSeedr.Add(itemToUpload.Magnet)
+            if err != nil {
+                log.WithField("error", err).Warn("Error adding magnet")
+                continue
+            }
 
-			// 	if isAVideo {
-			// 		// name := helper.SanitizeText(string(unsortedItem.Name[0 : len(unsortedItem.Name)-4]))
-			// 		item, err := database.GetSeedrItemByID(unsortedItem.SeedrID.ID)
-			// 		if err != nil {
-			// 			log.WithField("error", err).Warn("Error getting item from database")
-			// 		}
-			// 		downloadItem, err := database.GetDownloadItemBySeedrID(unsortedItem.SeedrID.ID)
-			// 		if err != nil {
-			// 			log.WithField("error", err).Warn("Error getting download item from database")
-			// 		}
-			// 		downloadItem.SeedrID = *item
-			// 		database.UpdateDownloadItem(downloadItem)
+            // * HERE - get the seedr id from the upload and store it
+            result.
+            
+				// for _, unsortedItem := range unsortedItems {
+				// 	log.WithFields(log.Fields{
+				// 		"show": unsortedItem.TVShowName,
+				// 		"name": unsortedItem.Name,
+				// 	}).Info("processsing unsorted item")
+				// 	okToDeleteFolder := false
+				// 	isAVideo := videoFileRegex.MatchString(unsortedItem.Name)
 
-			// 		if unsortedItem.ShowGUID.ID != 0 {
-			// 			path := filepath.Join(conf.DlRoot, conf.CompletedFolders[0])
-			// 			if unsortedItem.TVShowName != "" {
-			// 				path = filepath.Join(path, unsortedItem.TVShowName)
-			// 			}
-			// 			log.WithFields(log.Fields{
-			// 				"show":        unsortedItem.TVShowName,
-			// 				"destination": path,
-			// 			}).Info("Show found and autodownloading")
-			// 			_, err = os.Stat(path + unsortedItem.Name)
-			// 			if err != nil {
-			// 				if os.IsNotExist(err) {
-			// 					err = selectedSeedr.Get(unsortedItem, path)
-			// 					if err != nil {
-			// 						log.WithField("error", err).Warn("Error getting the file ", unsortedItem.Name)
-			// 						okToDeleteFolder = false
-			// 						delete(deleteQueue, unsortedItem.FolderPath)
-			// 						break unsortedLoop
-			// 					}
-			// 					okToDeleteFolder = true
-			// 				}
-			// 			}
-			// 			if conf.DeleteAfterDownload {
-			// 				infoLog(unsortedItem, "Deleting item")
-			// 				err = selectedSeedr.DeleteFile(unsortedItem.SeedrID.ID)
-			// 				if err != nil {
-			// 					log.WithField("error", err).Warn("Error deleting file ", unsortedItem.Name)
-			// 				}
-			// 				database.DeleteSeedrItem(unsortedItem.SeedrID.ID)
-			// 			}
-			// 		}
+				// 	if isAVideo {
+				// 		// name := helper.SanitizeText(string(unsortedItem.Name[0 : len(unsortedItem.Name)-4]))
+				// 		item, err := database.GetSeedrItemByID(unsortedItem.SeedrID.ID)
+				// 		if err != nil {
+				// 			log.WithField("error", err).Warn("Error getting item from database")
+				// 		}
+				// 		downloadItem, err := database.GetDownloadItemBySeedrID(unsortedItem.SeedrID.ID)
+				// 		if err != nil {
+				// 			log.WithField("error", err).Warn("Error getting download item from database")
+				// 		}
+				// 		downloadItem.SeedrID = *item
+				// 		database.UpdateDownloadItem(downloadItem)
 
-			// 		var path string
-			// 		if downloadItem.MediaType.String() == "movie" {
-			// 			path = filepath.Join(conf.DlRoot, conf.CompletedFolders[1])
-			// 		} else if downloadItem.MediaType.String() == "show" {
-			// 			path = filepath.Join(conf.DlRoot, conf.CompletedFolders[0])
-			// 		}
-			// 		log.WithFields(log.Fields{
-			// 			"name":        unsortedItem.Name,
-			// 			"destination": path,
-			// 		}).Info("autodownload item found, downloading")
+				// 		if unsortedItem.ShowGUID.ID != 0 {
+				// 			path := filepath.Join(conf.DlRoot, conf.CompletedFolders[0])
+				// 			if unsortedItem.TVShowName != "" {
+				// 				path = filepath.Join(path, unsortedItem.TVShowName)
+				// 			}
+				// 			log.WithFields(log.Fields{
+				// 				"show":        unsortedItem.TVShowName,
+				// 				"destination": path,
+				// 			}).Info("Show found and autodownloading")
+				// 			_, err = os.Stat(path + unsortedItem.Name)
+				// 			if err != nil {
+				// 				if os.IsNotExist(err) {
+				// 					err = selectedSeedr.Get(unsortedItem, path)
+				// 					if err != nil {
+				// 						log.WithField("error", err).Warn("Error getting the file ", unsortedItem.Name)
+				// 						okToDeleteFolder = false
+				// 						delete(deleteQueue, unsortedItem.FolderPath)
+				// 						break unsortedLoop
+				// 					}
+				// 					okToDeleteFolder = true
+				// 				}
+				// 			}
+				// 			if conf.DeleteAfterDownload {
+				// 				infoLog(unsortedItem, "Deleting item")
+				// 				err = selectedSeedr.DeleteFile(unsortedItem.SeedrID.ID)
+				// 				if err != nil {
+				// 					log.WithField("error", err).Warn("Error deleting file ", unsortedItem.Name)
+				// 				}
+				// 				database.DeleteSeedrItem(unsortedItem.SeedrID.ID)
+				// 			}
+				// 		}
 
-			// 		_, err = os.Stat(path + unsortedItem.Name)
-			// 		if err != nil {
-			// 			if os.IsNotExist(err) {
-			// 				err = selectedSeedr.Get(unsortedItem, path)
-			// 				if err != nil {
-			// 					log.WithField("error", err).Warn("Error getting the file ", unsortedItem.Name)
-			// 					okToDeleteFolder = false
-			// 					delete(deleteQueue, unsortedItem.FolderPath)
-			// 					break unsortedLoop
-			// 				}
-			// 				okToDeleteFolder = true
-			// 			}
-			// 		}
+				// 		var path string
+				// 		if downloadItem.MediaType.String() == "movie" {
+				// 			path = filepath.Join(conf.DlRoot, conf.CompletedFolders[1])
+				// 		} else if downloadItem.MediaType.String() == "show" {
+				// 			path = filepath.Join(conf.DlRoot, conf.CompletedFolders[0])
+				// 		}
+				// 		log.WithFields(log.Fields{
+				// 			"name":        unsortedItem.Name,
+				// 			"destination": path,
+				// 		}).Info("autodownload item found, downloading")
 
-			// 		if conf.DeleteAfterDownload {
-			// 			infoLog(unsortedItem, "Deleting item")
-			// 			err = selectedSeedr.DeleteFile(unsortedItem.SeedrID.ID)
-			// 			if err != nil {
-			// 				log.WithField("error", err).Warn("Error deleting file ", unsortedItem.Name)
+				// 		_, err = os.Stat(path + unsortedItem.Name)
+				// 		if err != nil {
+				// 			if os.IsNotExist(err) {
+				// 				err = selectedSeedr.Get(unsortedItem, path)
+				// 				if err != nil {
+				// 					log.WithField("error", err).Warn("Error getting the file ", unsortedItem.Name)
+				// 					okToDeleteFolder = false
+				// 					delete(deleteQueue, unsortedItem.FolderPath)
+				// 					break unsortedLoop
+				// 				}
+				// 				okToDeleteFolder = true
+				// 			}
+				// 		}
 
-			// 			}
-			// 		}
+				// 		if conf.DeleteAfterDownload {
+				// 			infoLog(unsortedItem, "Deleting item")
+				// 			err = selectedSeedr.DeleteFile(unsortedItem.SeedrID.ID)
+				// 			if err != nil {
+				// 				log.WithField("error", err).Warn("Error deleting file ", unsortedItem.Name)
 
-			// 	}
-			// 	if okToDeleteFolder {
-			// 		deleteQueue[unsortedItem.FolderPath] = unsortedItem.ParentSeedrID
-			// 	}
-			// }
+				// 			}
+				// 		}
+
+				// 	}
+				// 	if okToDeleteFolder {
+				// 		deleteQueue[unsortedItem.FolderPath] = unsortedItem.ParentSeedrID
+				// 	}
+			}
 		outerLoop:
 			for _, downloadFolder := range conf.CompletedFolders {
 				log.WithField("folder", downloadFolder).Debug("outerLoop")
@@ -562,4 +557,3 @@ func getNewEpisodes(url string) ([]Magnet, error) {
 
 	return returnData, nil
 }
-

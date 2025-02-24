@@ -2,16 +2,16 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
-	"io"
 
 	"net/http"
-	"sort"
 	"strconv"
 	"sync"
 
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 
 	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/db"
 	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/seedr"
@@ -39,13 +39,14 @@ type ShowPageData struct {
 // RunMagnetApi is the api for adding magnet urls
 func (magnetApi *MagnetApi) RunMagnetApi() {
 	r := mux.NewRouter()
-	r.HandleFunc("/gui", magnetApi.GuiHandler)
+	// r.HandleFunc("/gui", magnetApi.GuiHandler)
 	r.HandleFunc("/api/ping", magnetApi.PingHandler)
 	r.HandleFunc("/api/item", magnetApi.AddItemMagnet).Methods(http.MethodPost)
 	r.HandleFunc("/api/magnet", magnetApi.AddMagnetHandler).Methods(http.MethodPost)
 	r.HandleFunc("/api/torrent", magnetApi.AddTorrentHandler).Methods(http.MethodPost)
 	r.HandleFunc("/api/show/{showID}", magnetApi.ShowHandler).Methods(http.MethodGet)
-	r.HandleFunc("/api/data/show", magnetApi.DataShowHandler).Methods(http.MethodGet)
+	r.HandleFunc("/api/data/latest", magnetApi.LatestEpisodeHandler).Methods(http.MethodGet)
+	r.HandleFunc("/api/data/episode", magnetApi.AddEpisodeHandler).Methods(http.MethodPost)
 	r.HandleFunc("/api/search", magnetApi.SearchHandler).Methods(http.MethodGet)
 	// r.HandleFunc("/api/data/show/{showID}", magnetApi.DataShowByIDHandler).Methods("GET")
 	// r.HandleFunc("/api/data/show/{showID}", magnetApi.DataShowByIDHandler).Methods("POST")
@@ -146,7 +147,6 @@ func (magnetApi *MagnetApi) AddTorrentHandler(w http.ResponseWriter, r *http.Req
 		if err != nil {
 			log.WithError(err)
 		}
-		cache.SetAutoDownload(result.Torrent_hash, data.AutoDownload)
 
 	}
 	resultData, err := json.Marshal(result)
@@ -166,7 +166,7 @@ func (magnetApi *MagnetApi) ShowHandler(w http.ResponseWriter, r *http.Request) 
 	var result showrss.Shows
 	var err error
 
-	log.WithField("link", showID).Info("Getting all ShowRSS data")
+	log.WithField("showID", showID).Info("Getting all ShowRSS data")
 	result, err = magnetApi.GetFullShow(showID)
 	if err != nil {
 		log.WithError(err)
@@ -186,11 +186,77 @@ func (magnetApi *MagnetApi) ShowHandler(w http.ResponseWriter, r *http.Request) 
 	// w.Write(resultData)
 }
 
-func (magnetApi *MagnetApi) DataShowHandler(w http.ResponseWriter, r *http.Request) {
-	var result map[string]db.DownloadItem
+func (magnetApi *MagnetApi) AddEpisodeHandler(w http.ResponseWriter, r *http.Request) {
+	var data db.DownloadItem
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&data); err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Warn("Error decoding JSON")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Error decoding JSON"))
+	} else {
+		log.WithField("item", data.Name).Info("Adding Magnet/Torrent to MQ")
+		data.Downloaded = false
+		data.MediaType = db.Show
+		err := database.CreateDownloadItem(&data)
+		if err != nil {
+			log.WithError(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error adding item to database"))
+		}
+		err = database.AddSeedrUpload(&data)
+		if err != nil {
+			log.WithError(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error adding item to download queue"))
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Successfully added Episode to database"))
+}
+
+// LatestEpisodeHandler handles api calls to pull a show from ShowRSS
+func (magnetApi *MagnetApi) LatestEpisodeHandler(w http.ResponseWriter, r *http.Request) {
+	var dbItems map[string]db.DownloadItem
+	var result showrss.Shows
 	var err error
 
-	result = cache.GetAll()
+	result, err = showRSSClient.GetLatestSubscribedShows()
+	if err != nil {
+		log.WithError(err)
+	}
+
+	for _, item := range result.Item {
+		dbItem, err := database.GetDownloadItemByEpisodeID(string(item.TVEpisodeID))
+		if err != nil {
+			log.WithError(err)
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				magnet := db.MagnetURI(item.Link)
+				err = magnet.Validate()
+				if err != nil {
+					log.WithError(err)
+					magnet = ""
+				}
+
+				database.CreateDownloadItem(&db.DownloadItem{
+					Downloaded: false,
+					EpisodeID:  item,
+					Name:       item.ItemTitle(),
+					TVShowName: item.TVShowName,
+					Source:     db.ShowRSS,
+					ShowID:     item.TVShowID,
+					MediaType:  db.Show,
+					MagnetURI:  magnet,
+				})
+			}
+
+			continue
+		}
+		dbItems[item.TVShowName] = *dbItem
+	}
 
 	resultData, err := json.Marshal(result)
 	if err != nil {
@@ -203,79 +269,79 @@ func (magnetApi *MagnetApi) DataShowHandler(w http.ResponseWriter, r *http.Reque
 }
 
 // Load the web front end
-func (magnetApi *MagnetApi) GuiHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	bytes, err := io.ReadAll(r.Body)
-	// * dev code
-	_ = bytes
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-	}
+// func (magnetApi *MagnetApi) GuiHandler(w http.ResponseWriter, r *http.Request) {
+// 	defer r.Body.Close()
+// 	bytes, err := io.ReadAll(r.Body)
+// 	// * dev code
+// 	_ = bytes
+// 	if err != nil {
+// 		w.WriteHeader(http.StatusBadRequest)
+// 	}
 
-	templateMain := template.Must(template.ParseFiles(conf.CachePath + "/templates/main.html"))
-	movieData, err := yts.GetMovies("https://yts.mx/api/v2/list_movies.json?quality=2160p")
-	if err != nil {
-		log.WithField("error", err).Warn("Error getting Movie Data from YTS")
-	}
+// 	templateMain := template.Must(template.ParseFiles(conf.CachePath + "/templates/main.html"))
+// 	movieData, err := yts.GetMovies("https://yts.mx/api/v2/list_movies.json?quality=2160p")
+// 	if err != nil {
+// 		log.WithField("error", err).Warn("Error getting Movie Data from YTS")
+// 	}
 
-	showData, err := showrss.GetAllEpisodeItems(conf.ShowRSS)
-	if err != nil {
-		log.WithField("error", err).Warn("Error getting Show Data from ShowRSS")
-	}
+// 	showData, err := showrss.GetAllEpisodeItems(conf.ShowRSS)
+// 	if err != nil {
+// 		log.WithField("error", err).Warn("Error getting Show Data from ShowRSS")
+// 	}
 
-	showList := []showrss.Item{}
-	// Get list of "all" shows (only the latest X number of shows)
-	showsListAllData, err := showrss.GetShows("https://showrss.info/other/all.rss")
-	if err != nil {
-		log.WithField("error", err).Warn("Error getting Show List from ShowRSS")
-	}
+// 	showList := []showrss.Item{}
+// 	// Get list of "all" shows (only the latest X number of shows)
+// 	showsListAllData, err := showrss.GetShows("https://showrss.info/other/all.rss")
+// 	if err != nil {
+// 		log.WithField("error", err).Warn("Error getting Show List from ShowRSS")
+// 	}
 
-	// Get a list of all subscribed shows
-	showsListSubscribedData, err := showrss.GetShows(conf.ShowRSS)
-	if err != nil {
-		log.WithField("error", err).Warn("Error getting Show List from ShowRSS")
-	}
+// 	// Get a list of all subscribed shows
+// 	showsListSubscribedData, err := showrss.GetShows(conf.ShowRSS)
+// 	if err != nil {
+// 		log.WithField("error", err).Warn("Error getting Show List from ShowRSS")
+// 	}
 
-	for _, item := range showsListAllData.Item {
-		add := true
-		for _, addedItem := range showList {
-			if addedItem.TVShowID == item.TVShowID {
-				add = false
-			}
-		}
-		if add {
-			showList = append(showList, item)
-		}
-	}
+// 	for _, item := range showsListAllData.Item {
+// 		add := true
+// 		for _, addedItem := range showList {
+// 			if addedItem.TVShowID == item.TVShowID {
+// 				add = false
+// 			}
+// 		}
+// 		if add {
+// 			showList = append(showList, item)
+// 		}
+// 	}
 
-	for _, item := range showsListSubscribedData.Item {
-		add := true
-		for _, addedItem := range showList {
-			if addedItem.TVShowID == item.TVShowID {
-				add = false
-			}
-		}
-		if add {
-			showList = append(showList, item)
-		}
-	}
+// 	for _, item := range showsListSubscribedData.Item {
+// 		add := true
+// 		for _, addedItem := range showList {
+// 			if addedItem.TVShowID == item.TVShowID {
+// 				add = false
+// 			}
+// 		}
+// 		if add {
+// 			showList = append(showList, item)
+// 		}
+// 	}
 
-	sort.SliceStable(showList, func(i, j int) bool {
-		return showList[i].TVShowName < showList[j].TVShowName
-	})
-	// test, err := leetx.Lookup("ace", 15*time.Second)
-	// spew.Dump(test)
-	data := MainPageData{
-		Movies:   movieData,
-		Shows:    showData,
-		ShowList: showList,
-	}
+// 	sort.SliceStable(showList, func(i, j int) bool {
+// 		return showList[i].TVShowName < showList[j].TVShowName
+// 	})
+// 	// test, err := leetx.Lookup("ace", 15*time.Second)
+// 	// spew.Dump(test)
+// 	data := MainPageData{
+// 		Movies:   movieData,
+// 		Shows:    showData,
+// 		ShowList: showList,
+// 	}
 
-	templateMain.Execute(w, data)
+// 	templateMain.Execute(w, data)
 
-	// w.WriteHeader(http.StatusOK)
-	// w.Write([]byte(data))
-}
+// 	// w.WriteHeader(http.StatusOK)
+// 	// w.Write([]byte(data))
+// }
 
 // PingHandler is just a quick test to ensure api calls are working.
 func (magnetApi *MagnetApi) PingHandler(w http.ResponseWriter, r *http.Request) {
@@ -319,8 +385,7 @@ func (magnetApi *MagnetApi) AddRawTorrent(torrentUrl string) (seedr.Result, erro
 }
 
 func (magnetApi *MagnetApi) GetFullShow(showID string) (showrss.Shows, error) {
-	url := fmt.Sprintf("https://showrss.info/show/%s.rss", showID)
-	data, err := showrss.GetShows(url)
+	data, err := showRSSClient.GetShowByID(showID)
 	if err != nil {
 		return showrss.Shows{}, err
 	}

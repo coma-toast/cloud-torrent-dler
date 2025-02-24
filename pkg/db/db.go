@@ -3,6 +3,9 @@ package db
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/coma-toast/cloud-torrent-dler/m/v2/pkg/seedr"
@@ -31,6 +34,36 @@ const (
 	YTS     Source = "yts"
 )
 
+type MagnetURI string
+
+// Validate checks if the MagnetURI is a valid magnet link
+func (m MagnetURI) Validate() error {
+	magnetRegex := `^magnet:\?xt=urn:btih:[a-fA-F0-9]{40,}.*$`
+	matched, err := regexp.MatchString(magnetRegex, string(m))
+	if err != nil {
+		return err
+	}
+	if !matched {
+		return errors.New("invalid magnet link")
+	}
+	return nil
+}
+
+type TorrentURI string
+
+// Validate checks if the TorrentURI is a valid torrent link
+func (t TorrentURI) Validate() error {
+	torrentRegex := `^https?:\/\/.*\.torrent$`
+	matched, err := regexp.MatchString(torrentRegex, string(t))
+	if err != nil {
+		return err
+	}
+	if !matched {
+		return errors.New("invalid torrent link")
+	}
+	return nil
+}
+
 // DownloadItem is the information needed for the download queue
 type DownloadItem struct {
 	gorm.Model
@@ -38,7 +71,7 @@ type DownloadItem struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	Downloaded    bool
-	EpisodeID     int
+	EpisodeID     showrss.Item
 	FolderPath    string
 	IsDir         bool
 	Name          string
@@ -46,11 +79,11 @@ type DownloadItem struct {
 	ParentSeedrID int
 	SeedrID       seedr.File
 	Source        Source
-	ShowGUID      showrss.Item
+	ShowID        int
 	TorrentHash   string
 	MediaType     MediaType
 	MagnetURI     MagnetURI
-	// TorrentData   torrent.Torrent
+	TorrentData   TorrentURI
 }
 
 type DbClient struct {
@@ -65,8 +98,11 @@ type Database interface {
 	AddSeedrUpload(item *DownloadItem) error
 	GetSeedrUpload() (*DownloadItem, error)
 	CreateDownloadItem(item *DownloadItem) error
-	GetDownloadItem(id uint) (*DownloadItem, error)
 	GetDownloadItemByName(name string) (*DownloadItem, error)
+	GetDownloadItemByEpisodeID(id string) (*DownloadItem, error)
+	GetDownloadItemBySeedrID(id int) (*DownloadItem, error)
+	GetDownloadItemByID(id uint) (*DownloadItem, error)
+	GetDownloadItemSByShowGUID(guid string) (*DownloadItem, error)
 	UpdateDownloadItem(item *DownloadItem) error
 	DeleteDownloadItem(id uint) error
 }
@@ -137,16 +173,32 @@ func (db *DbClient) GetDownloadItemByID(id uint) (*DownloadItem, error) {
 	return &item, nil
 }
 
-func (db *DbClient) GetDownloadItemByShowGUID(guid string) (*DownloadItem, error) {
+func (db *DbClient) GetDownloadItemSByShowGUID(guid string) (*DownloadItem, error) {
 	var item DownloadItem
 	show, err := db.GetShowRSSItemByGUID(guid)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := db.client.Where(&DownloadItem{ShowGUID: *show}).First(&item).Error; err != nil {
+	if err := db.client.Where(&DownloadItem{ShowID: show.ID}).First(&item).Error; err != nil {
 		return nil, err
 	}
+	return &item, nil
+}
+
+func (db *DbClient) GetDownloadItemByEpisodeID(id string) (*DownloadItem, error) {
+	var item DownloadItem
+	episodeID, err := strconv.Atoi(id)
+	if err != nil {
+		return nil, err
+	}
+	var showItem = showrss.Item{
+		ID: episodeID,
+	}
+	if err := db.client.Where(showItem).First(&item).Error; err != nil {
+		return nil, err
+	}
+
 	return &item, nil
 }
 
@@ -211,6 +263,19 @@ func (db *DbClient) GetShowRSSItemByGUID(guid string) (*showrss.Item, error) {
 		return nil, err
 	}
 	return &item, nil
+}
+
+func (db *DbClient) GetShowRSSItemsByShowID(id string) (*[]showrss.Item, error) {
+	var items []showrss.Item
+	showId, err := strconv.Atoi(id)
+	if err != nil {
+		return nil, err
+	}
+	if err := db.client.Where(&showrss.Item{TVShowID: showId}).Find(&items).Error; err != nil {
+		return nil, err
+	}
+
+	return &items, nil
 }
 
 func (db *DbClient) GetShowRSSItemByID(id int) (*showrss.Item, error) {
